@@ -12,7 +12,7 @@ import funciones1 as F1
 
 dash.register_page(__name__, name='Predicciones') # '/' is home page
 
-today = pd.to_datetime(date(2012,12,12))
+today = pd.to_datetime(date(2019,12,12))
 hora = today.hour
 dia = today.dayofweek
 mes = today.month
@@ -35,10 +35,15 @@ demanda = itinerarios_bases.groupby("unplug_hourTime").size().reset_index(name='
 
 barrios_dropdown_options = [{'label':x, 'value':x} for x in sorted(itinerarios_bases["Barrio_Salida"].unique())]
 
-layout = html.Div(
-    [
+layout = dbc.Container(
+    children = [
         dbc.Row([
-            dbc.Col(html.Div(html.H2("Predicciones",style={"color":"#18bc9c"})), width=3),
+            dbc.Col(children = 
+                [
+                    html.Div(html.H2("Predicciones",style={"color":"#18bc9c", "vertical-align":"middle"})),
+                    html.Div(html.P(today.strftime("%d %B, %Y %I%p"),style={"color":"#18bc9c", "vertical-align":"middle"}))
+                ], width=3),
+            
             dbc.Col(dcc.Graph(id="avg-demand-day", 
                 figure=go.Figure(
                         data=[go.Bar(
@@ -46,10 +51,11 @@ layout = html.Div(
                             y = demanda.groupby(demanda["unplug_hourTime"].dt.dayofweek).agg({'Count':'mean'})['Count'],
                             marker_color=colors_day
                         )],
-                        layout = go.Layout(plot_bgcolor='rgba(0,0,0,0)',height=300, width=300)
+                        layout = go.Layout(plot_bgcolor='rgba(0,0,0,0)',height=150, width=300,
+                        margin=go.layout.Margin(l=50,r=50, b=1,t=50,pad = 5))
                     ),
                 config={'displayModeBar': False}
-            ), width=3, style = { "margin-top":"-3rem"}),
+            ), width={"size":3,"offset":2}, style = { "margin-top":"-3rem"}),
             dbc.Col(dcc.Graph(id="avg-demand-hour", 
                 figure=go.Figure(
                         data=[go.Bar(
@@ -57,20 +63,8 @@ layout = html.Div(
                             y = demanda.groupby(demanda["unplug_hourTime"].dt.hour).agg({'Count':'mean'})['Count'],
                             marker_color=colors_hora
                         )],
-                        layout = go.Layout(plot_bgcolor='rgba(0,0,0,0)', height=200, width=300, yaxis={'visible':False}, title={'text': "Demanda por horas",'x':0.5,'xanchor': 'center','yanchor': 'bottom'}),
-                        
-                    ),
-                    config={'displayModeBar': False}
-            ), width=3, style = { "margin-top":"-3rem"}),
-            dbc.Col(dcc.Graph(id="avg-demand-mes", 
-                figure=go.Figure(
-                        data=[go.Bar(
-                            x = demanda.groupby(demanda["unplug_hourTime"].dt.month).agg({'Count':'mean'}).index,
-                            y = demanda.groupby(demanda["unplug_hourTime"].dt.month).agg({'Count':'mean'})['Count'],
-                            marker_color=colors_mes
-                        )],
-                        layout = go.Layout(plot_bgcolor='rgba(0,0,0,0)', height=300, width=300, yaxis={'visible':False}, title={'text': "Evolución último mes",'x':0.5,'xanchor': 'center','yanchor': 'bottom'}),
-                        
+                        layout = go.Layout(plot_bgcolor='rgba(0,0,0,0)', height=150, width=300, yaxis={'visible':False}, title={'text': "Demanda por horas",'x':0.5,'xanchor': 'center','yanchor': 'bottom'},
+                        margin=go.layout.Margin(l=50,r=50, b=1,t=50,pad = 5))
                     ),
                     config={'displayModeBar': False}
             ), width=3, style = { "margin-top":"-3rem"}),
@@ -87,11 +81,9 @@ layout = html.Div(
             dbc.Col(dcc.Graph(id='output-container-date-picker-range1', style = {"display": "none" }) )
         ])
 
-        # dbc.Row([
-        #     dbc.Col(dcc.Dropdown(id="start-date-prediction", multi=False, value="2020-01-01", options=barrios_dropdown_options), width = 6),
-        #     dbc.Col(dcc.Dropdown(id="start-date-prediction", multi=False, value="2020-01-01", options=barrios_dropdown_options), width = 6)   
-        # ], justify='start') # center, end, between, around
-    ]
+    ],
+    fluid = True,
+    className="mt-3"
 )
 
 @callback(

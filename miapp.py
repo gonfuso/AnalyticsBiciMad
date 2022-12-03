@@ -33,7 +33,7 @@ sidebar = dbc.Card(
             ),
         ], style={"margin-top":"0rem"}),
     ], color = "light",
-    style = {"height":"100vh", "width":"12rem", "margin-left":"-1rem",  "position":"fixed"}    
+    style = {"height":"100vh", "width":"16rem", "margin-left":"-1rem",  "position":"fixed"}    
 )    
 
 app.layout = dbc.Container([
@@ -42,12 +42,12 @@ app.layout = dbc.Container([
             dbc.Col(
                 [
                     sidebar
-                ], width=2), 
+                ], width = 2), 
 
             dbc.Col(
                 [
                     dash.page_container
-                ], width=9, style={ "margin-top":"2rem"})
+                ], width=9, style={"margin-left":"16rem"})
         ]
     )
 ], fluid=True)
