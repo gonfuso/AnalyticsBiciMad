@@ -5,15 +5,22 @@ import plotly.express as px
 import dash_bootstrap_components as dbc
 import pickle
 import plotly.graph_objects as go
-from fbprophet import Prophet
-import datetime
-from datetime import date, timedelta
+from prophet import Prophet
+from datetime import timedelta, date, datetime
+import numpy as np
+import funciones1 as F1
 
 dash.register_page(__name__, name='Predicciones') # '/' is home page
 
-hora = datetime.datetime.now().hour
-dia = datetime.datetime.today().weekday()
-mes = datetime.datetime.today().month
+today = pd.to_datetime(date(2012,12,12))
+hora = today.hour
+dia = today.dayofweek
+mes = today.month
+
+# Si se actualizase diariamente:
+# hora = datetime.now().hour
+# dia = datetime.today().weekday()
+# mes = datetime.today().month
 
 colors_day = ['lightslategray']*7
 colors_day[dia]="#18bc9c"
@@ -31,7 +38,7 @@ barrios_dropdown_options = [{'label':x, 'value':x} for x in sorted(itinerarios_b
 layout = html.Div(
     [
         dbc.Row([
-            dbc.Col(html.Div(html.H1("Predicciones",style={"color":"#18bc9c"})), width=3),
+            dbc.Col(html.Div(html.H2("Predicciones",style={"color":"#18bc9c"})), width=3),
             dbc.Col(dcc.Graph(id="avg-demand-day", 
                 figure=go.Figure(
                         data=[go.Bar(
@@ -50,7 +57,7 @@ layout = html.Div(
                             y = demanda.groupby(demanda["unplug_hourTime"].dt.hour).agg({'Count':'mean'})['Count'],
                             marker_color=colors_hora
                         )],
-                        layout = go.Layout(plot_bgcolor='rgba(0,0,0,0)', height=300, width=300, yaxis={'visible':False}, title={'text': "Demanda por horas",'x':0.5,'xanchor': 'center','yanchor': 'bottom'}),
+                        layout = go.Layout(plot_bgcolor='rgba(0,0,0,0)', height=200, width=300, yaxis={'visible':False}, title={'text': "Demanda por horas",'x':0.5,'xanchor': 'center','yanchor': 'bottom'}),
                         
                     ),
                     config={'displayModeBar': False}
@@ -95,52 +102,36 @@ layout = html.Div(
 
 def update_prediction(start_date, end_date):
 
-    m = pickle.load(open('./Predictions/demandpredicition.pkl', 'rb'))
-    if start_date and end_date:
-        dates = pd.date_range(pd.to_datetime(start_date),pd.to_datetime(end_date)-timedelta(days=1),freq='h')
-        future = pd.DataFrame(dates)
-        future.columns = ['ds']
-        future['ds'] = pd.to_datetime(future['ds'])  
-        future['typeofday'] = future['ds'].apply(typeofday)
-        forecast = m.predict(future)
+    fiestas_madrid = pd.DataFrame({
+        'holiday': 'fiestas',
+        'ds': pd.to_datetime(['2019-08-15', '2019-10-12',
+                                '2019-11-01', '2019-11-09',
+                                '2019-12-06', '2019-12-09',
+                                '2019-12-25', '2020-01-01', 
+                                '2020-01-06']),
+        'lower_window': -1,
+        'upper_window': 0,
+    })
 
-        fig = go.Figure(go.Scatter(
-            x = forecast['ds'],
-            y = forecast['yhat'],
-            mode='lines',
-            name = "Predicción",
-            marker_color = "#18bc9c"
-        ))
+    model = pickle.load(open('./Predictions/demandPredicition1.pkl', 'rb'))
 
-        fig.update_layout(title_text="Predicción semanal demanda <b>Neural Prophet</b> BiciMAD", yaxis_title="Demand", plot_bgcolor='rgba(0,0,0,0)')
+    forecast = model.make_future_dataframe(periods = 24*4, freq = "H")
+    forecast = F1.is_friday(forecast)
+    forecast = F1.is_weekend(forecast)
+    forecast = F1.is_laborable(forecast)
+    forecast = F1.entrada_trabajo(forecast,fiestas_madrid)
 
-        return (fig,{"display":"block"})
-    else:
-        dates = pd.date_range(pd.to_datetime(date(2020,1,1)),pd.to_datetime(date(2020,1,7))-timedelta(days=1),freq='h')
-        future = pd.DataFrame(dates)
-        future.columns = ['ds']
-        future['ds'] = pd.to_datetime(future['ds'])  
-        future['typeofday'] = future['ds'].apply(typeofday)
-        forecast = m.predict(future)
+    forecast = model.predict(forecast)
+    forecast["yhat"] = np.exp(forecast["yhat"])
 
-        fig = go.Figure(go.Scatter(
-            x = forecast['ds'],
-            y = forecast['yhat'],
-            mode='lines',
-            name = "Predicción",
-            marker_color = "#18bc9c"
-        ))
+    fig = go.Figure(go.Scatter(
+        x = forecast['ds'].iloc[-24*4:],
+        y = forecast['yhat'].iloc[-24*4:],
+        mode='lines',
+        name = "Predicción",
+        marker_color = "#18bc9c"
+    ))
 
-        fig.update_layout(title_text="Predicción <b>demanda</b> BiciMAD", yaxis_title="Demand", plot_bgcolor='rgba(0,0,0,0)')
+    fig.update_layout(title_text="Predicción demanda BiciMAD", yaxis_title="Demand", plot_bgcolor='rgba(0,0,0,0)')
 
-        return (fig,{"display":"block"})
-
-def typeofday(ds):
-        date = pd.to_datetime(ds)
-        if (date.weekday() == 5 or date.weekday() == 6):
-            return 0
-        elif(date.weekday() == 4):
-            return 1
-        else:
-            return 2
-    
+    return (fig,{"display":"block"})

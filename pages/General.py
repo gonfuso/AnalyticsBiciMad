@@ -3,9 +3,7 @@ import dash
 from dash import Input, Output, dcc, html, ctx, callback
 import plotly.express as px
 import dash_bootstrap_components as dbc
-import pickle
 import plotly.graph_objects as go
-from fbprophet import Prophet
 
 dash.register_page(__name__, path='/', name='General') # '/' is home page
 

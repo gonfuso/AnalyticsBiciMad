@@ -5,7 +5,6 @@ import plotly.express as px
 import dash_bootstrap_components as dbc
 import pickle
 import plotly.graph_objects as go
-from fbprophet import Prophet
 
 app = dash.Dash(__name__, use_pages=True,external_stylesheets=[dbc.themes.FLATLY, dbc.icons.BOOTSTRAP], 
                 meta_tags=[{'name': 'viewport',
@@ -16,9 +15,9 @@ sidebar = dbc.Card(
     [
         dbc.CardBody([
             dbc.NavItem(dbc.NavLink(html.I(className="bi bi-bicycle", style = {"font-size":"5rem"}), style={"text-align":"center"},href="https://www.bicimad.com/", external_link=True)),
-            html.H1("BiciMAD",  style = {"text-align":"center"}),
+            html.H3("BiciMAD",  style = {"text-align":"center"}),
             html.Hr(),
-            html.P("Cuadro de mandos de red de bicicletas eléctricas de la Comunidad de Madrid", className = "lead"),
+            html.P("Cuadro de mandos de red de bicicletas eléctricas de la Comunidad de Madrid", className = "lead", style={"font-size":"14px"}),
             dbc.Nav(
                 children = [
                     dbc.NavLink([
@@ -34,7 +33,7 @@ sidebar = dbc.Card(
             ),
         ], style={"margin-top":"0rem"}),
     ], color = "light",
-    style = {"height":"100vh", "width":"16rem", "margin-left":"-1rem",  "position":"fixed"}    
+    style = {"height":"100vh", "width":"12rem", "margin-left":"-1rem",  "position":"fixed"}    
 )    
 
 app.layout = dbc.Container([
@@ -43,15 +42,15 @@ app.layout = dbc.Container([
             dbc.Col(
                 [
                     sidebar
-                ]),
+                ], width=2), 
 
             dbc.Col(
                 [
                     dash.page_container
-                ], style={ "width":"73%", "margin-left": "18rem", "margin-top":"2rem", "height": "200px","position":"fixed"})
+                ], width=9, style={ "margin-top":"2rem"})
         ]
     )
 ], fluid=True)
 
 if __name__ == "__main__":
-    app.run_server(debug=True, port=3000)
+    app.run_server(debug=True)
