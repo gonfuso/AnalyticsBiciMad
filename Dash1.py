@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import dash
-import dash_core_components as dcc
+from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 from collections import Counter 
