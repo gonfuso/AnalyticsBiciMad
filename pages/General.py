@@ -15,9 +15,14 @@ itinerarios_bases = itinerarios_bases[itinerarios_bases["unplug_hourTime"].dt.tz
 
 today = pd.to_datetime(date(2019,12,12))
 
-card = dbc.Card(
-    [dbc.CardHeader("Distribución de las edades por tipo de usuario", style = {"background-color":"#ecf0f1"}), 
-    dbc.CardBody("Body")], className="h-100"
+cardAlert = dbc.Card(
+    [dbc.CardHeader("Alertas situación estaciones", style = {"background-color":"#ecf0f1"}), 
+    dbc.CardBody("Aquí va una lista del día y la hora en que ciertas estaciones están completas o por el contrrio, vacías.")], className="h-100"
+)
+
+cardTable = dbc.Card(
+    [dbc.CardHeader("Tabla métircas", style = {"background-color":"#ecf0f1"}), 
+    dbc.CardBody("Aquí va una tabla de infrmación importante. Aún no se cual")], className="h-100"
 )
 
 cardAge = dbc.Card(
@@ -25,19 +30,22 @@ cardAge = dbc.Card(
         dbc.CardHeader("Duración viajes por edad y tipo de usuario", style = {"background-color":"#ecf0f1"}), 
         dbc.CardBody([
             dbc.Row([
-                dcc.RangeSlider(0, 1440,
+                dcc.RangeSlider(1, 1440,
                     id='traveltime-slider',
                     marks={
-                        0: {'label': '0h'},
+                        1: {'label': '1min'},
                         180: {'label': '3h'},
+                        360: {'label': '6h'},
+                        540: {'label': '9h'},
                         720: {'label': '12h'},
-                        1440: {'label': '1d', 'style': {'color': '#f50'}},
-                        #2880: {'label': '2d', 'style': {'color': '#f50'}},
+                        1080: {'label': '18h'},
+                        1440: {'label': '1d', 'style': {'color': '#2c3e50'}},
                     },
-                    value=[1, 180],
+                    value=[1, 1440],
                     dots=False,
                     step=1,
-                    updatemode='drag'
+                    updatemode='drag',
+                    #className = "m-4"
                 ),
             ]),
             html.Div(id="edades-display")
@@ -49,7 +57,6 @@ cardAge = dbc.Card(
     Input("traveltime-slider", "value")
 )
 def display_edades(value):
-    #transformed_value = [F1.transform_value(v) for v in value]
     return [
         dbc.Row(
             children = [
@@ -76,7 +83,7 @@ cardGauge = dbc.Card(
                     ],
                     value="long_rental",
                 ),
-            ]),
+            ]), 
             html.Div(id="status-display")
         ])
     ], className="h-100"
@@ -100,9 +107,132 @@ def display_status(value):
             )
     ]
 
-graph_card = dbc.Card(
-    [dbc.CardHeader("Here's a graph"), dbc.CardBody("An amazing graph")],
+cardDemandaHoras = dbc.Card(
+    [
+        dbc.CardHeader("Demanda media por horas", style = {"background-color":"#ecf0f1"}), 
+        dbc.CardBody(dcc.Graph(figure = F1.estacionalidadHoras(itinerarios_bases)))
+    ], className="h-100"
+)
+
+cardDemandaDias = dbc.Card(
+    [
+        dbc.CardHeader("Demanda media por día de la semana", style = {"background-color":"#ecf0f1"}), 
+        dbc.CardBody(dcc.Graph(figure = F1.estacionalidadDias(itinerarios_bases)))
+    ], className="h-100"
+)
+
+cardDemandaMeses = dbc.Card(
+    [
+        dbc.CardHeader("Demanda media por mes", style = {"background-color":"#ecf0f1"}), 
+        dbc.CardBody(dcc.Graph(figure = F1.estacionalidadMeses(itinerarios_bases)))
+    ], className="h-100"
+)
+
+
+cardMap = dbc.Card(
+    [
+        dbc.CardHeader("Estaciones BiciMAD por distrito", style = {"background-color":"#ecf0f1"}), 
+        dbc.CardBody([
+            dbc.Row([
+                dcc.Dropdown(
+                    id="select-distrito",
+                    options = itinerarios_bases.Distrito_Salida.unique(),
+                    multi=True,
+                    style={"color": "#2c3e50", "width":"80%"}
+                )
+            ]),
+            html.Div(id="map-display", style = {"padding": "1rem", "width" : "100%"})
+        ])
+    ],
     className="h-100",
+)
+@callback(
+    Output("map-display", "children"),
+    Input("select-distrito", "value")
+)
+def displayMap(value):
+    if (value == None) | (value == []):
+        return [
+        dbc.Row([
+            dcc.Graph(figure = F1.mapDisplay(itinerarios_bases, itinerarios_bases.Distrito_Salida.unique()), config={'displayModeBar': False})
+        ])
+    ]
+    else:
+        return [
+            dbc.Row([
+                dcc.Graph(figure = F1.mapDisplay(itinerarios_bases, value), config={'displayModeBar': False})
+            ])
+        ]
+
+cardCloud = dbc.Card(
+    [
+        dbc.CardHeader("Estaciones más frecuentadas", style = {"background-color":"#ecf0f1"}), 
+        dbc.CardBody([
+            html.Div(id="wordcloud-display",
+                children =[
+                    dbc.Row(
+                        children = [
+                            dcc.Graph(figure = F1.wordcloudDisplay(itinerarios_bases), config={'displayModeBar': False}, style = {"padding": "1rem", "width" : "100%"})
+                        ]
+                    ),
+                ])
+        ])
+    ], className="h-100", 
+)
+# @callback(
+#     Output("wordcloud-display", "children"),
+#     Input("traveltime-slider", "value")
+# )
+# def displayWordCloud(itinerarios_bases):
+#     return [
+#         dbc.Row(
+#             children = [
+#                 dcc.Graph(figure = F1.wordcloudDisplay(itinerarios_bases), config={'displayModeBar': False})
+#             ]
+#         ),
+#     ]
+
+cardTopRutas = dbc.Card(
+    [
+        dbc.CardHeader("Rutas Más Concurridas", style = {"background-color":"#ecf0f1"}), 
+        dbc.CardBody([
+            dbc.Row([
+                dcc.Dropdown(
+                    id="select-Rutasdistrito",
+                    options = itinerarios_bases.Distrito_Salida.unique(),
+                    multi=True,
+                    style={"color": "#2c3e50", "width":"80%"}
+                )
+            ]),
+            html.Div(id="mapRutas-display", style = {"padding": "1rem", "width" : "100%"})
+        ])
+    ],
+    className="h-100",
+)
+@callback(
+    Output("mapRutas-display", "children"),
+    Input("select-Rutasdistrito", "value")
+)
+def displayRutasMap(value):
+    if (value == None) | (value == []):
+        return [
+        dbc.Row([
+            dcc.Graph(figure = F1.mapRutasDisplay(itinerarios_bases, itinerarios_bases.Distrito_Salida.unique()), config={'displayModeBar': False})
+        ])
+    ]
+    else:
+        return [
+            dbc.Row([
+                dcc.Graph(figure = F1.mapRutasDisplay(itinerarios_bases, value), config={'displayModeBar': False})
+            ])
+        ]
+
+
+cardSunburstItinerarios = dbc.Card(
+    [
+        dbc.CardHeader("Distribución Top Itinerarios", style = {"background-color":"#ecf0f1"}), 
+        dbc.CardBody(dcc.Graph(figure = F1.sunburstItinerarios(itinerarios_bases, 5,10)))
+    ], className="h-100"
 )
 
 layout = dbc.Container(
@@ -122,14 +252,51 @@ layout = dbc.Container(
                         dbc.Col(cardGauge, width = 8),
                         dbc.Col(cardAge, width = 4), 
                     ], style = {"height":"450px"}),
-                    html.H2("sldfasfdjlaskfjasf"),
+                    html.Div(
+                        html.H3("Estacionalidad", style={"color":"#2c3e50", "padding-top":"3rem"}),
+                    ),
                     dbc.Row([
-                        dbc.Col(graph_card)
-                    ]*2, style = {"height":"400px"})
-                ], width = 10),
+                        dbc.Col(cardDemandaHoras, width = 4),
+                        dbc.Col(cardDemandaDias, width = 4),
+                        dbc.Col(cardDemandaMeses, width = 4),
+                    ]),
+                ]),
+                dbc.Col(cardAlert, width=2)
+            ], justify = "center"),
 
-                dbc.Col(card, width=2)
-            ], justify = "center")
+            dbc.Row([
+                html.Div(
+                        html.H3("Análisis estaciones y rutas", style={"color":"#2c3e50", "padding-top":"3rem"}),
+                ),
+                dbc.Col([
+                    html.Div(
+                        dbc.Accordion([
+                            dbc.AccordionItem(
+                                title = "Estaciones", 
+                                # style ={"background-color": "black"},
+                                children = [
+                                    dbc.Row([
+                                        dbc.Col(cardMap, width = 6, style = {"height":"800px"}),
+                                        dbc.Col([
+                                            dbc.Card(cardCloud, style = {"height":"400px", "margin-bottom": "5px"}),
+                                            dbc.Card(cardTable, style = {"height":"395px", "margin-top": "5px"})
+                                        ],width = 6)
+                                    ], ),
+                                ]
+                            ),
+                            dbc.AccordionItem(
+                                title = "Rutas", 
+                                children = [
+                                    dbc.Row([
+                                        dbc.Col(cardTopRutas, width = 6, style = {"height":"800px"}),
+                                        dbc.Col(cardSunburstItinerarios, width = 6, style = {"height":"800px"})
+                                    ], ),
+                                ]
+                            ),
+                        ], always_open = True)
+                    )                     
+                ], width = 12),
+            ],  justify = "center", style = {"padding-bottom": "2rem"})
     ]  ,
     fluid = True,
     className="mt-3"
