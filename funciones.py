@@ -5,7 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import dash_core_components as dcc
 from dash import html
-
+height = 300
 def topNRutas(df, n_top ): 
     cols_rutas=['Origen_destino','Latitud_Salida','Longitud_Salida','Distrito_Salida','Latitud_Llegada','Longitud_Llegada','Distrito_Llegada', 'idplug_station', 'idunplug_station' ]
     df_rutas=df[df['idplug_station']!=df['idunplug_station'] ].groupby(cols_rutas)['return_date'].count().to_frame().reset_index().sort_values('return_date', ascending=False)
@@ -69,7 +69,7 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
         data = [[-40, 3]]
         df = pd.DataFrame(data, columns=['lat', 'lon'])
 
-        fig=px.scatter_mapbox(df,lon='lon', lat='lat' ,width = 500, height = 400)
+        fig=px.scatter_mapbox(df,lon='lon', lat='lat' , height = height)#,width = 500,
 
         fig.update_layout(
                 margin=dict(l=0, r=0, t=0, b=0),
@@ -77,8 +77,8 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
                 autosize=True,
                 hovermode='closest',
                 showlegend=True,
-                width = 425,
-                height = 500,
+                #width = 425,
+                height = height,
                 mapbox=dict(
                     bearing=0,
                     center=dict(
@@ -88,7 +88,7 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
                     style= 'carto-positron' )# 'open-street-map'
                 )
         
-
+        
         return fig
     else: 
         
@@ -105,7 +105,7 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
             top_estaciones2=top_estaciones
 
             
-        fig = px.scatter_mapbox(top_estaciones2, lat="Latitud", lon="Longitud",color='Distrito',width = 400, height = 400 )# zoom = 70, size='count'
+        fig = px.scatter_mapbox(top_estaciones2, lat="Latitud", lon="Longitud",color='Distrito', height = height )# zoom = 70, size='count',width = 400
 
         for i in range(top_rutas.shape[0]): 
             valores=top_rutas.iloc[i,:]
@@ -120,7 +120,7 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
                 showlegend=False, 
                 customdata=valores[['idplug_station','idunplug_station','viajes']], 
                 text=valores[['idplug_station','idunplug_station','viajes']],
-                hoverinfo='customdata'),
+                ),#hoverinfo='customdata'
                 )
            
         
@@ -153,7 +153,7 @@ def filtrarHoraDiaSeman(sit, dia, hora):
 
 def GraficoSituacionMapa(situaciones, grafico): 
     dic_grafico={0:'free_bases', 1:'dock_bikes'}
-    fig = px.scatter_mapbox(situaciones, lat="latitude", lon="longitude",  color = dic_grafico[grafico],  width = 400, height = 400, zoom = 12,
+    fig = px.scatter_mapbox(situaciones, lat="latitude", lon="longitude",  color = dic_grafico[grafico], height = height, zoom = 12,#width = 400
                             color_continuous_scale=px.colors.diverging.RdBu,
                             hover_data={'latitude':False,
                                         'longitude':False,
