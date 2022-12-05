@@ -250,9 +250,9 @@ def wordcloudDisplay(df):
 
     return fig
 
-def wordcloudDisplay2(df): 
-    df=df.astype({'Distrito_Llegada': str})
-    barrios_llegada = df['Distrito_Llegada']
+def wordcloudDisplay2(df, x): 
+    df=df.astype({x: str})
+    barrios_llegada = df[x]
 
     barrios_llegada_wordcloud=["".join(i for i in palabra if not i.isdigit()) for palabra in barrios_llegada]
     barrios_frec=Counter(barrios_llegada_wordcloud)
@@ -261,8 +261,7 @@ def wordcloudDisplay2(df):
 
     wordcloud = WordCloud (
                         background_color = 'white',
-                        width = 400,
-                        height = 300,
+                        height = 150,
                         collocations=False, colormap="YlGnBu").generate_from_frequencies(barrios_frec)
 
     
@@ -324,12 +323,16 @@ def SetColor(df):
     return color_list
 
 def mapRutasDisplay(itinerarios_bases, distrito): 
-    df = itinerarios_bases[itinerarios_bases["Distrito_Salida"].isin(distrito)]
+    if distrito == None:
+            df = itinerarios_bases
+    else:
+            df = itinerarios_bases[itinerarios_bases["Distrito_Salida"]==distrito]
+
     cols_rutas=['Origen_destino','Latitud_Salida','Longitud_Salida','Distrito_Salida','Latitud_Llegada','Longitud_Llegada','Distrito_Llegada', 'idplug_station', 'idunplug_station' ]
-    df_rutas=df[df['idplug_station']!=df['idunplug_station'] ].groupby(cols_rutas)['idplug_base'].count().to_frame().reset_index().sort_values('idplug_base', ascending=False)
-    df_rutas.rename(columns={'idplug_base': 'viajes'}, inplace=True)
+    df_rutas=df[df['idplug_station']!=df['idunplug_station'] ].groupby(cols_rutas)['name_Llegada'].count().to_frame().reset_index().sort_values('name_Llegada', ascending=False)
+    df_rutas.rename(columns={'name_Llegada': 'viajes'}, inplace=True)
     
-    topRutas=df_rutas.head(16)
+    topRutas=df_rutas.head(10)
     topRutas['ruta']=topRutas.apply(lambda x: sorted([x.Longitud_Salida, x.Latitud_Salida, x.Longitud_Llegada, x.Latitud_Llegada]), axis=1)
     topRutas['ruta']=topRutas['ruta'].apply(lambda x: ' '.join([str(word) for word in x]))
     cols_rutas=['Latitud_Salida','Longitud_Salida','Latitud_Llegada','Longitud_Llegada', 'ruta']
@@ -356,13 +359,13 @@ def mapRutasDisplay(itinerarios_bases, distrito):
 
         fig.add_trace(
             go.Scattermapbox(
-            mode = "markers+lines",
-            lon = [valores['Longitud_Salida'], valores['Longitud_Llegada']],
-            lat = [valores['Latitud_Salida'], valores['Latitud_Llegada']],
-            line= {'width':valores['viajes']*0.005} ,
-            name= 'Ruta '+str(1+i), 
-            marker_color = px.colors.qualitative.Prism,
-
+                mode = "markers+lines",
+                lon = [valores['Longitud_Salida'], valores['Longitud_Llegada']],
+                lat = [valores['Latitud_Salida'], valores['Latitud_Llegada']],
+                line= {'width':valores['viajes']*0.007} ,
+                name= 'Ruta '+str(1+i), 
+                marker_color = ["#18bc9c"]*20,
+                fillcolor = "#18bc9c"
             ))
 
     fig.update_layout(
@@ -385,7 +388,6 @@ def mapRutasDisplay(itinerarios_bases, distrito):
 
 
 def rutas(df): 
-        
     long_llegada=df['Longitud_Llegada'].iloc[0]
     lat_llegada=df['Latitud_Llegada'].iloc[0]
     long_salida=df['Longitud_Salida'].iloc[0]
@@ -407,11 +409,11 @@ def sunburstItinerarios(itinerarios_bases, N, M):
     estaciones_mas_concurridas = itinerarios_bases.groupby(["idunplug_station"]).size().reset_index().rename(columns={0:"count"}).sort_values(by=['count'], ascending = False).head(N).reset_index(drop=True)
     estaciones_mas_concurridas1 = itinerarios_bases[itinerarios_bases["idunplug_station"].isin(estaciones_mas_concurridas["idunplug_station"])]
 
-    df_combinations = estaciones_mas_concurridas1.groupby(["idunplug_station", "Distrito_Llegada", "idplug_station"]).size().reset_index().rename(columns={0:"count"}).sort_values(by=['count'], ascending = False)
+    df_combinations = estaciones_mas_concurridas1.groupby(["name_Salida", "idunplug_station","Distrito_Llegada", "name_Llegada"]).size().reset_index().rename(columns={0:"count"}).sort_values(by=['count'], ascending = False)
 
     topCombinaciones = pd.DataFrame()
-    for i in df_combinations["idunplug_station"].unique():
-        estacion_origen = df_combinations[df_combinations["idunplug_station"] == i]
+    for i in df_combinations["name_Salida"].unique():
+        estacion_origen = df_combinations[df_combinations["name_Salida"] == i]
         topCombinacionesi = estacion_origen.sort_values(by=['count'], ascending = False).head(M)
         topCombinaciones = topCombinaciones.append(topCombinacionesi)
     topCombinaciones.reset_index(drop=True)
@@ -419,14 +421,38 @@ def sunburstItinerarios(itinerarios_bases, N, M):
 
     fig = px.sunburst(
         topCombinaciones,
-        path = ["idunplug_station", "Distrito_Llegada", "idplug_station"],
+        path = ["name_Salida", "Distrito_Llegada", "name_Llegada"],
         color = "idunplug_station",
-        height=800,
+        height=600,
         values='count',
         color_continuous_scale='YlGnBu'
 
     )
     fig.update_layout(margin=dict(l=1,r=1, b=10,t=20,pad = 5), showlegend=False)
+    fig.update_coloraxes(showscale=False)
     
     return fig
 
+
+def tablaInfo(itinerarios_bases, distritos):
+    itinerarios_bases = itinerarios_bases[itinerarios_bases["Distrito_Salida"].isin(distritos)]
+    itinerarios_bases["lost"] = np.where(itinerarios_bases["status"]=="long_rental",1,0)
+    itinerarios_bases["change_bike"] = np.where(itinerarios_bases["status"]=="change_bike",1,0)
+    itinerarios_bases["successful"] = np.where(itinerarios_bases["status"]=="short_rental",1,0)
+    bases = itinerarios_bases.groupby(["idunplug_station", "name_Salida", "address_Salida", "Distrito_Salida", "Barrio_Salida", "Número de Plazas_Salida"], as_index=False).agg({"lost":"sum","change_bike":"sum", "successful":"sum"})
+
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=['<b>Id</b>','<b>Nombre</b>', '<b>Dirección</b>', '<b>Distrito</b>', '<b>Barrio</b>', '<b>Nº Bases</b>', '<b>Ratio Perdidas %</b>', '<b>Ratio defectuosas %</b>',],
+            line_color='white', fill_color='#18bc9c', font=dict(color="white"),
+            align='center',
+        ),
+        cells=dict(
+            values=[bases["idunplug_station"], bases["name_Salida"], bases["address_Salida"], bases["Distrito_Salida"], bases["Barrio_Salida"], round(bases["Número de Plazas_Salida"]), round(bases["lost"]/bases["successful"]*100), round(bases["change_bike"]/bases["successful"]*100, 2)],
+            align='center', fill_color='white', font=dict(color='#18bc9c', size=11)
+            ))
+    ])
+
+    fig.update_layout(margin=dict(l=1,r=1, b=1,t=1,pad = 5), height = 300)
+
+    return fig

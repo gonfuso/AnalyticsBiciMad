@@ -1,6 +1,6 @@
 import pandas as pd
 import dash
-from dash import Input, Output, dcc, html, callback
+from dash import Input, Output, dcc, html, callback, dash_table
 import plotly.express as px
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
@@ -11,21 +11,130 @@ import base64
 
 dash.register_page(__name__, path='/', name='General') # '/' is home page
 
-itinerarios_bases = pd.read_parquet('./Data/Itinerarios/itinerarios_bases.parquet')
+itinerarios_bases = pd.read_parquet('./Data/Itinerarios/itinerarios_bases3.parquet')
 itinerarios_bases["unplug_hourTime"] = pd.to_datetime(itinerarios_bases["unplug_hourTime"])
 itinerarios_bases = itinerarios_bases[itinerarios_bases["unplug_hourTime"].dt.tz_localize(None)>pd.to_datetime("20190801")]
+
+situaciones = pd.read_parquet('Data/SituacionEstaciones/situaciones2.parquet')
+
+# situaciones1 = situaciones[situaciones["hour"]>5]
+# situaciones1["hour"] = situaciones1["hour"].replace([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],["12am","1am","2am", "3am", "4am", "5am", "6am", "7am", "8am", "9am", "10am", "11am","12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm", "7pm", "8pm", "9pm", "10pm","11pm"])
+# situaciones1 = situaciones1.drop(situaciones1[(situaciones1.free_bases == 0) & (situaciones1.dock_bikes == 0)].index)
+# situaciones1["occupancyRate"] = situaciones1['dock_bikes']/situaciones1['total_bases']*100
+# situaciones_grouped = situaciones1.groupby(["hour", "number", "name"], as_index=False).agg({"free_bases":"mean", "dock_bikes":"mean", "_id": "count", "occupancyRate":"median"})
+# occupancyHigh = situaciones_grouped[situaciones_grouped["occupancyRate"]>75]
+# occupancyLow = situaciones_grouped[situaciones_grouped["occupancyRate"]<10]
+
+situaciones["occupancyRate"] = situaciones['dock_bikes']/situaciones['total_bases']*100
+situaciones["hour"] = situaciones["hour"].replace([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],["12am","1am","2am", "3am", "4am", "5am", "6am", "7am", "8am", "9am", "10am", "11am","12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm", "7pm", "8pm", "9pm", "10pm","11pm"])
+situaciones["number"] = situaciones["number"].astype(str)
+occupancyHigh = situaciones[situaciones["occupancyRate"]>80].groupby(["hour", "number", "name"], as_index=False).agg({"free_bases":"mean", "dock_bikes":"mean", "_id": "count"})
+occupancyLow = situaciones[situaciones["occupancyRate"]<20].groupby(["hour", "number", "name"], as_index=False).agg({"free_bases":"mean", "dock_bikes":"mean", "_id": "count"})
+occupancyLow = occupancyLow.drop(occupancyLow[(occupancyLow.free_bases == 0) & (occupancyLow.dock_bikes == 0)].index)
+occupancyHigh = occupancyHigh[occupancyHigh["_id"]>80]
+occupancyLow = occupancyLow[occupancyLow["_id"]>90]
+
 
 today = pd.to_datetime(date(2019,12,12))
 
 cardAlert = dbc.Card(
-    [dbc.CardHeader("Alertas situación estaciones", style = {"background-color":"#ecf0f1"}), 
-    dbc.CardBody("Aquí va una lista del día y la hora en que ciertas estaciones están completas o por el contrrio, vacías.")], className="h-100"
+    [
+        dbc.CardHeader("Alertas situación estaciones", style = {"background-color":"#ecf0f1"}), 
+        dbc.CardBody([
+            dbc.Row([
+                dcc.Dropdown(
+                    id="dropdown-occupancy",
+                    options=[
+                        {"label": "Alta ocupación", "value": "highOccupancy"},
+                        {"label": "Baja ocupación", "value": "lowOccupancy"},
+                    ],
+                    value="highOccupancy",
+                ),
+            ], style={"padding-bottom":"0.5rem"}), 
+            html.Div(id='dash-table'),
+            html.Div(id='datatable-interactivity-container')
+        ])
+        
+    ], className="h-100"
 )
 
-cardTable = dbc.Card(
-    [dbc.CardHeader("Tabla métircas", style = {"background-color":"#ecf0f1"}), 
-    dbc.CardBody("Aquí va una tabla de infrmación importante. Aún no se cual")], className="h-100"
+
+@callback(
+    Output('dash-table', "children"),
+    Input('dropdown-occupancy', "value")
 )
+def display_table(value):
+    if(value == "highOccupancy"):
+        data = occupancyHigh.to_dict('records')
+    else:
+        data = occupancyLow.to_dict('records')
+    
+    return [
+        dash_table.DataTable(
+                    id='alertTable',
+                    columns = [{"name": "id", "id": "number"},
+                            {"name": "hora", "id": "hour"}],
+                    data=data,
+                    #editable=True,
+                    filter_action="native",
+                    sort_action="native",
+                    sort_mode="multi",
+                    #column_selectable="single",
+                    row_selectable="single",
+                    #row_deletable=True,
+                    #selected_columns=[],
+                    selected_rows=[0],
+                    page_action="native",
+                    page_current= 0,
+                    page_size= 12,
+                ),
+    ]
+
+@callback(
+    Output('datatable-interactivity-container', "children"),
+    Input('alertTable', "derived_virtual_data"),
+    Input('alertTable', "derived_virtual_selected_rows"))
+def update_graphs(rows, derived_virtual_selected_rows):
+    if derived_virtual_selected_rows is None:
+        return[html.Div()]
+    else:
+        dff = situaciones if rows is None else pd.DataFrame(rows)
+        return [
+        html.Div([
+            html.P(dff["name"][derived_virtual_selected_rows], style = {"color":"#18bc9c"}),
+            dbc.Row([
+                dbc.Col(html.P("Bases libres:"), width=9,style={"font-weight": "bold"}),
+                dbc.Col(html.P(round(dff["free_bases"][derived_virtual_selected_rows])),width=3),
+            ]),
+            dbc.Row([
+                dbc.Col(html.P("Bases ocupadas:"), width=9, style={"font-weight": "bold"}),
+                dbc.Col(html.P(round(dff["dock_bikes"][derived_virtual_selected_rows])), width=3),
+            ]),
+        ])
+    ]
+    
+cardTable = dbc.Card([
+        dbc.CardHeader("Información Estaciones", style = {"background-color":"#ecf0f1"}), 
+        dbc.CardBody(id="table-display")
+    ], className="h-100"
+)
+@callback(
+    Output("table-display", "children"),
+    Input("select-distrito", "value")
+)
+def displayTable(value):
+    if (value == None) | (value == []):
+        return [
+        dbc.Row([
+            dcc.Graph(figure = F1.tablaInfo(itinerarios_bases, itinerarios_bases.Distrito_Salida.unique()), config={'displayModeBar': False})
+        ])
+    ]
+    else:
+        return [
+            dbc.Row([
+                dcc.Graph(figure = F1.tablaInfo(itinerarios_bases, value))
+            ])
+        ]
 
 cardAge = dbc.Card(
     [
@@ -140,7 +249,8 @@ cardMap = dbc.Card(
                     id="select-distrito",
                     options = itinerarios_bases.Distrito_Salida.unique(),
                     multi=True,
-                    style={"color": "#2c3e50", "width":"80%"}
+                    style={"color": "#2c3e50", "width":"80%"},
+                    placeholder="Seleccionar un distrito"
                 )
             ]),
             html.Div(id="map-display", style = {"padding": "1rem", "width" : "100%"})
@@ -170,35 +280,42 @@ cardCloud = dbc.Card(
     [
         dbc.CardHeader("Estaciones más frecuentadas", style = {"background-color":"#ecf0f1"}), 
         dbc.CardBody([
+            dbc.RadioItems(
+                    id="btn-wc",
+                    className="btn-group",
+                    inputClassName="btn-check",
+                    labelClassName="btn btn-outline-primary",
+                    labelCheckedClassName="active",
+                    options=[
+                        {"label": "Estación", "value": "name_Salida"},
+                        {"label": "Distrito", "value": "Distrito_Salida"},
+                        {"label": "Barrio", "value": "Barrio_Salida"},
+                    ],
+                    value="name_Salida",
+                ),
             html.Div(id="wordcloud-display",
                 children =[
                     dbc.Row(
                         children = [
                             #dcc.Graph(figure = F1.wordcloudDisplay(itinerarios_bases), config={'displayModeBar': False}, style = {"padding": "1rem", "width" : "100%"})
+                            #html.Div(html.Img(id="image_wc"), style = { 'height': '100%'})
                             html.Img(id="image_wc")
-                        ]
+                        ], 
                     ),
                 ])
         ])
     ], className="h-100", 
 )
-@callback(Output('image_wc', 'src'), [Input('image_wc', 'id')])
-def make_image(b):
+@callback(
+    Output('image_wc', 'src'), 
+    [Input('image_wc', 'id'),
+    Input('btn-wc', 'value')]
+)
+def make_image(b, value):
     img = BytesIO()
-    F1.wordcloudDisplay2(itinerarios_bases).save(img, format='PNG')
+    F1.wordcloudDisplay2(itinerarios_bases, value).save(img, format='PNG')
     return 'data:image/png;base64,{}'.format(base64.b64encode(img.getvalue()).decode())
-# @callback(
-#     Output("wordcloud-display", "children"),
-#     Input("traveltime-slider", "value")
-# )
-# def displayWordCloud(itinerarios_bases):
-#     return [
-#         dbc.Row(
-#             children = [
-#                 dcc.Graph(figure = F1.wordcloudDisplay(itinerarios_bases), config={'displayModeBar': False})
-#             ]
-#         ),
-#     ]
+
 
 cardTopRutas = dbc.Card(
     [
@@ -208,8 +325,9 @@ cardTopRutas = dbc.Card(
                 dcc.Dropdown(
                     id="select-Rutasdistrito",
                     options = itinerarios_bases.Distrito_Salida.unique(),
-                    multi=True,
-                    style={"color": "#2c3e50", "width":"80%"}
+                    multi=False,
+                    style={"color": "#2c3e50", "width":"80%"},
+                    placeholder="Seleccionar un distrito para ver sus rutas más concurridas"
                 )
             ]),
             html.Div(id="mapRutas-display", style = {"padding": "1rem", "width" : "100%"})
@@ -222,26 +340,38 @@ cardTopRutas = dbc.Card(
     Input("select-Rutasdistrito", "value")
 )
 def displayRutasMap(value):
-    if (value == None) | (value == []):
-        return [
+    return [
         dbc.Row([
-            dcc.Graph(figure = F1.mapRutasDisplay(itinerarios_bases, itinerarios_bases.Distrito_Salida.unique()), config={'displayModeBar': False})
+            dcc.Graph(figure = F1.mapRutasDisplay(itinerarios_bases, value), config={'displayModeBar': False})
         ])
     ]
-    else:
-        return [
-            dbc.Row([
-                dcc.Graph(figure = F1.mapRutasDisplay(itinerarios_bases, value), config={'displayModeBar': False})
-            ])
-        ]
 
 
 cardSunburstItinerarios = dbc.Card(
     [
         dbc.CardHeader("Distribución Top Itinerarios", style = {"background-color":"#ecf0f1"}), 
-        dbc.CardBody(dcc.Graph(figure = F1.sunburstItinerarios(itinerarios_bases, 5,10)))
+        dbc.CardBody([
+            dbc.Row([
+                dbc.Col([
+                    dbc.Col(html.P("NºEstaciones de salida:"),width=9),
+                    dbc.Col(dbc.Input(id="N",type="number", min=0,max=10,step=1, value=5), width=3)
+                ], width = 6),
+                dbc.Col([
+                    dbc.Col(html.P("NºEstaciones de llegada:"), width=9),
+                    dbc.Col(dbc.Input(id="M",type="number", min=0,max=10,step=1, value=10), width=3)
+                ], width =6),
+            ]),
+            dbc.Row(id="sunburst-display")
+        ])
     ], className="h-100"
 )
+@callback(
+    Output("sunburst-display", "children"),
+    [Input("N", "value"), 
+    Input("M", "value")]
+)
+def sunburst_display(N, M):
+    return [dcc.Graph(figure = F1.sunburstItinerarios(itinerarios_bases, N,M))]
 
 layout = dbc.Container(
     children = [
@@ -281,14 +411,13 @@ layout = dbc.Container(
                         dbc.Accordion([
                             dbc.AccordionItem(
                                 title = "Estaciones", 
-                                # style ={"background-color": "black"},
                                 children = [
                                     dbc.Row([
                                         dbc.Col(cardMap, width = 6, style = {"height":"800px"}),
                                         dbc.Col([
-                                            dbc.Card(cardCloud, style = {"height":"400px", "margin-bottom": "5px"}),
-                                            dbc.Card(cardTable, style = {"height":"395px", "margin-top": "5px"})
-                                        ],width = 6)
+                                            dbc.Card(cardTable, style = {"height":"400px", "margin-bottom": "5px"}),
+                                            dbc.Card(cardCloud, style = {"height":"390px", "margin-top": "5px"}),
+                                        ],width = 6),
                                     ], ),
                                 ]
                             ),
@@ -301,7 +430,7 @@ layout = dbc.Container(
                                     ], ),
                                 ]
                             ),
-                        ], always_open = True)
+                        ], always_open = False)
                     )                     
                 ], width = 12),
             ],  justify = "center", style = {"padding-bottom": "2rem"})
