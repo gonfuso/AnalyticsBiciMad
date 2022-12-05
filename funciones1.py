@@ -108,8 +108,8 @@ def update_prediction(start_date, end_date):
     return (fig,{"display":"block"})
 
 
-def gaugeDisplay(df, date, value): 
-    df_filtrado = df[(df["status"]==value) & (df["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date))]
+def gaugeDisplay(df, date, value, typeofday): 
+    df_filtrado = df[(df["status"]==value) & (df["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date)) & (df["typeofday"].isin(typeofday))]
     date_init_week = date - timedelta(days=date.dayofweek)
     lost_this_week = round(df_filtrado[df_filtrado["unplug_hourTime"].dt.tz_localize(None)>pd.to_datetime(date_init_week)].groupby(df_filtrado["unplug_hourTime"].dt.isocalendar().week).size().reset_index(name='Count')["Count"].mean())
     avg_lost_per_week = round(df_filtrado[df_filtrado["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date_init_week)].groupby(df_filtrado["unplug_hourTime"].dt.isocalendar().week).size().reset_index(name='Count')["Count"].mean())
@@ -130,8 +130,8 @@ def gaugeDisplay(df, date, value):
 
     return fig
 
-def timelineDisplay(df,date, value):
-    df_filtrado = df[(df["status"]==value) & (df["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date))]
+def timelineDisplay(df,date, value, typeofday):
+    df_filtrado = df[(df["status"]==value) & (df["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date)) & (df["typeofday"].isin(typeofday))]
 
     fig = go.Figure(go.Scatter(
         x = df_filtrado.groupby(df_filtrado["unplug_hourTime"].dt.date).size().reset_index(name='Count')['unplug_hourTime'],
@@ -158,9 +158,9 @@ def timelineDisplay(df,date, value):
     return fig
 
 
-def pyramidDisplay(df, value):
+def pyramidDisplay(df, value, typeofday):
     df["ageRange"] = df["ageRange"].replace([0,1,2,3,4,5,6],["Ind.","0-16","17-18", "19-26", "27-40", "41-65", "66+"])
-    df = df[(df["travel_time"]<=1440) & (df["travel_time"]>0)]
+    df = df[(df["travel_time"]<=1440) & (df["travel_time"]>0) & (df["typeofday"].isin(typeofday))]
     df1 =df[(df["travel_time"]>value[0]) & (df["travel_time"]<value[1])]
     df1["travel_time"] = df1["travel_time"]/60
     ageRange_1 = df1[df1["user_type"] == 1].groupby("ageRange").agg({"travel_time":"mean"})
@@ -268,8 +268,8 @@ def wordcloudDisplay2(df, x):
 
     return wordcloud.to_image()
 
-def estacionalidadHoras(df):
-    demanda = df.groupby("unplug_hourTime").size().reset_index(name='Count')
+def estacionalidadHoras(df, typeofday):
+    demanda = df[df["typeofday"].isin(typeofday)].groupby("unplug_hourTime").size().reset_index(name='Count')
     demanda_agrupada = demanda.groupby(demanda["unplug_hourTime"].dt.hour).agg({'Count':'mean'})
 
     fig=go.Figure(go.Bar(
@@ -293,12 +293,11 @@ def estacionalidadDias(df):
         ))
     fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', height = 150, margin = dict(l=10,r=10, b=1,t=10,pad = 5))
     fig.update_yaxes(gridcolor="lightgrey")
-    #fig.update_xaxes(ticktext=["L", "M", "X", "J", "V", "S", "D"])
 
     return fig
 
-def estacionalidadMeses(df):
-    demanda = df.groupby("unplug_hourTime").size().reset_index(name='Count')
+def estacionalidadMeses(df, typeofday):
+    demanda = df[df["typeofday"].isin(typeofday)].groupby("unplug_hourTime").size().reset_index(name='Count')
     demanda_agrupada = demanda.groupby(demanda["unplug_hourTime"].dt.month).agg({'Count':'mean'})
     fig=go.Figure(go.Bar(
             x = [ "Ago", "Sep", "Oct", "Nov", "Dec"],
@@ -307,7 +306,6 @@ def estacionalidadMeses(df):
         ))
     fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', height = 150, margin = dict(l=10,r=10, b=1,t=10,pad = 5))
     fig.update_yaxes(gridcolor="lightgrey")
-    #fig.update_xaxes(ticktext=["E", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"])
 
     return fig
 
@@ -434,8 +432,8 @@ def sunburstItinerarios(itinerarios_bases, N, M):
     return fig
 
 
-def tablaInfo(itinerarios_bases, distritos):
-    itinerarios_bases = itinerarios_bases[itinerarios_bases["Distrito_Salida"].isin(distritos)]
+def tablaInfo(itinerarios_bases, distritos, typeofday):
+    itinerarios_bases = itinerarios_bases[(itinerarios_bases["Distrito_Salida"].isin(distritos))&(itinerarios_bases["typeofday"].isin(typeofday))]
     itinerarios_bases["lost"] = np.where(itinerarios_bases["status"]=="long_rental",1,0)
     itinerarios_bases["change_bike"] = np.where(itinerarios_bases["status"]=="change_bike",1,0)
     itinerarios_bases["successful"] = np.where(itinerarios_bases["status"]=="short_rental",1,0)

@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import dash
 from dash import Input, Output, dcc, html, callback, dash_table
 import plotly.express as px
@@ -14,6 +15,7 @@ dash.register_page(__name__, path='/', name='General') # '/' is home page
 itinerarios_bases = pd.read_parquet('./Data/Itinerarios/itinerarios_bases3.parquet')
 itinerarios_bases["unplug_hourTime"] = pd.to_datetime(itinerarios_bases["unplug_hourTime"])
 itinerarios_bases = itinerarios_bases[itinerarios_bases["unplug_hourTime"].dt.tz_localize(None)>pd.to_datetime("20190801")]
+itinerarios_bases["typeofday"] = np.where(itinerarios_bases["dayofweek"].isin([5,6]), 0, 1)
 
 situaciones = pd.read_parquet('Data/SituacionEstaciones/situaciones2.parquet')
 
@@ -61,9 +63,10 @@ cardAlert = dbc.Card(
 
 @callback(
     Output('dash-table', "children"),
-    Input('dropdown-occupancy', "value")
+    [Input('dropdown-occupancy', "value"), 
+    Input("typeofday-checklist", "value")]
 )
-def display_table(value):
+def display_table(value, typeofday):
     if(value == "highOccupancy"):
         data = occupancyHigh.to_dict('records')
     else:
@@ -120,19 +123,20 @@ cardTable = dbc.Card([
 )
 @callback(
     Output("table-display", "children"),
-    Input("select-distrito", "value")
+    [Input("select-distrito", "value"), 
+    Input("typeofday-checklist", "value")]
 )
-def displayTable(value):
+def displayTable(value, typeofday):
     if (value == None) | (value == []):
         return [
         dbc.Row([
-            dcc.Graph(figure = F1.tablaInfo(itinerarios_bases, itinerarios_bases.Distrito_Salida.unique()), config={'displayModeBar': False})
+            dcc.Graph(figure = F1.tablaInfo(itinerarios_bases, itinerarios_bases.Distrito_Salida.unique(), typeofday), config={'displayModeBar': False})
         ])
     ]
     else:
         return [
             dbc.Row([
-                dcc.Graph(figure = F1.tablaInfo(itinerarios_bases, value))
+                dcc.Graph(figure = F1.tablaInfo(itinerarios_bases, value, typeofday))
             ])
         ]
 
@@ -165,13 +169,14 @@ cardAge = dbc.Card(
 )
 @callback(
     Output("edades-display", "children"),
-    Input("traveltime-slider", "value")
+    [Input("traveltime-slider", "value"),
+    Input("typeofday-checklist", "value")]
 )
-def display_edades(value):
+def display_edades(value, typeofday):
     return [
         dbc.Row(
             children = [
-                dcc.Graph(figure = F1.pyramidDisplay(itinerarios_bases, value), config={'displayModeBar': False})
+                dcc.Graph(figure = F1.pyramidDisplay(itinerarios_bases, value, typeofday), config={'displayModeBar': False})
             ]
         ),
     ]
@@ -202,18 +207,19 @@ cardGauge = dbc.Card(
 
 @callback(
     Output("status-display", "children"),
-    Input("btn-status", "value")
+    [Input("btn-status", "value"),
+    Input("typeofday-checklist", "value")]
 )
-def display_status(value):
+def display_status(value, typeofday):
     return [
         dbc.Row(
                 children = [
-                    dcc.Graph(figure = F1.gaugeDisplay(itinerarios_bases, today, value), config={'displayModeBar': False})
+                    dcc.Graph(figure = F1.gaugeDisplay(itinerarios_bases, today, value, typeofday), config={'displayModeBar': False})
                 ]
             ),
             dbc.Row(
                 children = [
-                    dcc.Graph(figure = F1.timelineDisplay(itinerarios_bases, today, value), config={'displayModeBar': False})
+                    dcc.Graph(figure = F1.timelineDisplay(itinerarios_bases, today, value, typeofday), config={'displayModeBar': False})
                 ]
             )
     ]
@@ -221,9 +227,15 @@ def display_status(value):
 cardDemandaHoras = dbc.Card(
     [
         dbc.CardHeader("Demanda media por horas", style = {"background-color":"#ecf0f1"}), 
-        dbc.CardBody(dcc.Graph(figure = F1.estacionalidadHoras(itinerarios_bases)))
+        dbc.CardBody(id = "dh-display")
     ], className="h-100"
 )
+@callback(
+    Output("dh-display", "children"),
+    Input("typeofday-checklist", "value")
+)
+def dh_display(typeofday):
+    return [dcc.Graph(figure = F1.estacionalidadHoras(itinerarios_bases, typeofday))]
 
 cardDemandaDias = dbc.Card(
     [
@@ -235,10 +247,15 @@ cardDemandaDias = dbc.Card(
 cardDemandaMeses = dbc.Card(
     [
         dbc.CardHeader("Demanda media por mes", style = {"background-color":"#ecf0f1"}), 
-        dbc.CardBody(dcc.Graph(figure = F1.estacionalidadMeses(itinerarios_bases)))
+        dbc.CardBody(id = "dm-display")
     ], className="h-100"
 )
-
+@callback(
+    Output("dm-display", "children"),
+    Input("typeofday-checklist", "value")
+)
+def dm_display(typeofday):
+    return [dcc.Graph(figure = F1.estacionalidadMeses(itinerarios_bases, typeofday))]
 
 cardMap = dbc.Card(
     [
@@ -379,7 +396,20 @@ layout = dbc.Container(
                 dbc.Col([
                     dbc.Col(html.Div(html.H2("General", style={"color":"#18bc9c", "vertical-align":"middle"}))),
                     dbc.Col(html.P(html.P(today.strftime("%d %B, %Y %I%p"),style={"color":"#18bc9c", "vertical-align":"middle"})))
-                ], width = 3, style = {"padding":"1rem 1rem"})
+                ], width = 3, style = {"padding":"1rem 1rem"}), 
+                dbc.Col([
+                    #dbc.Col(html.P(html.P('Día de la semana',style={"color":"#18bc9c", "vertical-align":"bottom"}))),
+                    dbc.Col(dbc.Checklist(
+                        id = "typeofday-checklist",
+                        options=[
+                            {"label": "Laboral", "value": 1},
+                            {"label": "Fin de semana", "value": 0},                                                    
+                            ],
+                        label_checked_style={"color": "#2c3e50"},
+                        input_checked_style={"backgroundColor": "#2c3e50","borderColor": "#5b80a5"},
+                        value=[0, 1],
+                        inline=False),style= {'vertical-align': 'bottom'} )
+                    ], width={"size": 2, "offset": 7}, style = {"padding":"1rem 1rem"})
             ]),
 
             html.Hr(),
