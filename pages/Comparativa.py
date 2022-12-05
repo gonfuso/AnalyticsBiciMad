@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 import funciones as F
 from datetime import timedelta, date, datetime
 from dash.exceptions import PreventUpdate
+import json 
 
 
 dash.register_page(__name__,  name='Comparativa') # '/' is home page
@@ -149,10 +150,24 @@ layout = html.Div(
         dbc.Row(
             [
                 dbc.Col( [cardBases], width=5),
-                dbc.Col([cardRutas ], width=4)
+                dbc.Col([cardRutas ], width=4), 
+                dbc.Col( html.Div([
+            dcc.Markdown("""
+                **Click Data**
+
+                Click on points in the graph.
+            """),
+            html.Pre(id='click-data')]), width=2)    
                 
             ]
         )
     ]
 )
+@callback(
+    Output('click-data', 'children'),
+    Input('MapaRutas', 'clickData'))
+def display_click_data(clickData):
+    print('AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII')
+    print(clickData)
+    return json.dumps(clickData, indent=2)
 
