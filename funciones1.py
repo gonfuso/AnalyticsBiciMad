@@ -250,6 +250,25 @@ def wordcloudDisplay(df):
 
     return fig
 
+def wordcloudDisplay2(df): 
+    df=df.astype({'Distrito_Llegada': str})
+    barrios_llegada = df['Distrito_Llegada']
+
+    barrios_llegada_wordcloud=["".join(i for i in palabra if not i.isdigit()) for palabra in barrios_llegada]
+    barrios_frec=Counter(barrios_llegada_wordcloud)
+
+    set(barrios_llegada_wordcloud)
+
+    wordcloud = WordCloud (
+                        background_color = 'white',
+                        width = 400,
+                        height = 300,
+                        collocations=False, colormap="YlGnBu").generate_from_frequencies(barrios_frec)
+
+    
+
+    return wordcloud.to_image()
+
 def estacionalidadHoras(df):
     demanda = df.groupby("unplug_hourTime").size().reset_index(name='Count')
     demanda_agrupada = demanda.groupby(demanda["unplug_hourTime"].dt.hour).agg({'Count':'mean'})

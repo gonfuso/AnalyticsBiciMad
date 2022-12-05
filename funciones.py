@@ -51,10 +51,10 @@ def topEstaciones(df):
 
     topEstaciones0=pd.concat([estaciones_salida, estaciones_llegada], axis=0, ignore_index=True )
     topEstaciones0.loc[:,'count']=1
-    print(topEstaciones0['numero'])
+
     def top_estaciones(df): 
         distrito= df['Distrito'].iloc[0]
-        #print(df['numero'])
+        
         number= df['numero'].iloc[0]
         count=df['count'].sum()
         cols=['numero','Distrito', 'count']
@@ -94,11 +94,7 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
         
         top_rutas=topNRutas(df_itinerarios,n_top )
         top_estaciones=topEstaciones(top_rutas) 
-        print('La estacion es: '+str(estacion))
-        print(estacion)
-        # print(top_estaciones.columns)
-        print(top_estaciones['numero'])
-        print(top_estaciones.dtypes)
+        
         tamano_lines=0.005
         if tipo==0:
             top_estaciones2=top_estaciones[top_estaciones['numero']!=estacion]
@@ -107,7 +103,7 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
         else: 
             tamano_lines=0.005
             top_estaciones2=top_estaciones
-        print(top_estaciones.shape)
+
             
         fig = px.scatter_mapbox(top_estaciones2, lat="Latitud", lon="Longitud",color='Distrito',width = 400, height = 400 )# zoom = 70, size='count'
 
@@ -123,8 +119,10 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
                 name= 'Ruta '+str(1+i), 
                 showlegend=False, 
                 customdata=valores[['idplug_station','idunplug_station','viajes']], 
-                text=valores[['idplug_station','idunplug_station','viajes']]),
+                text=valores[['idplug_station','idunplug_station','viajes']],
+                hoverinfo='customdata'),
                 )
+           
         
         fig.update_layout(hovermode="x unified")
         fig.update_layout(
@@ -132,7 +130,7 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
             margin=dict(l=0, r=0, t=0, b=0),
             autosize=True,
             hovermode='closest',
-            showlegend=True,
+            showlegend=False,
             # width = 500,
             # height = 425,
             mapbox=dict(

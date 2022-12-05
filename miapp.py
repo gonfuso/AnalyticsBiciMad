@@ -1,6 +1,6 @@
 import pandas as pd
 import dash
-from dash import Input, Output, dcc, html, ctx
+from dash import Input, Output, dcc, html #ctx
 import plotly.express as px
 import dash_bootstrap_components as dbc
 import pickle
@@ -39,7 +39,7 @@ sidebar = dbc.Card(
 app.layout = dbc.Container([
     dbc.Row(
         [
-            dbc.Col(
+            dbc.Col(            
                 [
                     sidebar
                 ], width = 2), 

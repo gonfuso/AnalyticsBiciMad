@@ -6,6 +6,8 @@ import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from datetime import timedelta, date, datetime
 import funciones1 as F1
+from io import BytesIO
+import base64
 
 dash.register_page(__name__, path='/', name='General') # '/' is home page
 
@@ -172,13 +174,19 @@ cardCloud = dbc.Card(
                 children =[
                     dbc.Row(
                         children = [
-                            dcc.Graph(figure = F1.wordcloudDisplay(itinerarios_bases), config={'displayModeBar': False}, style = {"padding": "1rem", "width" : "100%"})
+                            #dcc.Graph(figure = F1.wordcloudDisplay(itinerarios_bases), config={'displayModeBar': False}, style = {"padding": "1rem", "width" : "100%"})
+                            html.Img(id="image_wc")
                         ]
                     ),
                 ])
         ])
     ], className="h-100", 
 )
+@callback(Output('image_wc', 'src'), [Input('image_wc', 'id')])
+def make_image(b):
+    img = BytesIO()
+    F1.wordcloudDisplay2(itinerarios_bases).save(img, format='PNG')
+    return 'data:image/png;base64,{}'.format(base64.b64encode(img.getvalue()).decode())
 # @callback(
 #     Output("wordcloud-display", "children"),
 #     Input("traveltime-slider", "value")
