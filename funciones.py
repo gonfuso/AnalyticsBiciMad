@@ -38,6 +38,71 @@ def topNRutas(df, n_top ):
     topRutasFin= topRutas.groupby('ruta').apply(rutas).reset_index()
     return(topRutasFin.head(n_top))
 
+def topNRutas2(df, n_top ): 
+    cols_rutas=['Origen_destino','travel_time','Latitud_Salida','Longitud_Salida','Distrito_Salida','Latitud_Llegada','Longitud_Llegada','Distrito_Llegada', 'idplug_station', 'idunplug_station', 'name_Salida', 'name_Llegada' ]
+    df_rutas=df[df['idplug_station']!=df['idunplug_station'] ].groupby(cols_rutas)['user_type'].count().to_frame().reset_index().sort_values('user_type', ascending=False)
+    df_rutas.rename(columns= {'user_type': 'viajes'},  inplace=True )
+    topRutas=df_rutas.head(25)
+    topRutas.loc[:,'ruta']=topRutas.apply(lambda x: sorted([x.Longitud_Salida, x.Latitud_Salida, x.Longitud_Llegada, x.Latitud_Llegada]), axis=1)
+    topRutas.loc[:,'ruta']=topRutas['ruta'].apply(lambda x: ' '.join([str(word) for word in x]))
+    
+    def rutas(df): 
+        
+        long_llegada=df['Longitud_Llegada'].iloc[0]
+        lat_llegada=df['Latitud_Llegada'].iloc[0]
+        distrito_llegada=df['Distrito_Llegada'].iloc[0]
+       
+        
+        idplug_station=df['idplug_station'].iloc[0]
+        idunplug_station=df['idunplug_station'].iloc[0]
+        
+        name_salida=df['name_Salida'].iloc[0]
+        name_llegada=df['name_Llegada'].iloc[0]
+        
+        
+        travel_time=df['travel_time'].mean()
+        long_salida=df['Longitud_Salida'].iloc[0]
+        lat_salida=df['Latitud_Salida'].iloc[0]
+        distrito_salida=df['Distrito_Salida'].iloc[0]
+        viajes=df['viajes'].sum()
+        
+        cols= ['idplug_station','name_Llegada' ,'idunplug_station','name_Salida','travel_time','Latitud_Salida','Longitud_Salida','Distrito_Salida','Latitud_Llegada','Longitud_Llegada','Distrito_Llegada', 'viajes']
+        datos=[idplug_station,name_llegada ,idunplug_station,name_salida, travel_time, lat_salida, long_salida, distrito_salida, lat_llegada, long_llegada,distrito_llegada, viajes]
+        return pd.Series(dict(zip(cols,datos)))
+                
+    topRutasFin= topRutas.groupby('ruta').apply(rutas).reset_index()
+    return(topRutasFin.head(n_top))
+def linepolar(df,sentido=None, n_top=None):
+    if type(df) == str:
+        fig = go.Figure(data=
+            go.Scatterpolar(
+                r = [0],
+                #theta = [35,70,120,155,205,240],
+                mode = 'markers',
+            ))
+        fig.update_layout(
+            height=150,
+            width=350,
+            font = dict(size=7),
+            margin=dict(l=0, r=0, t=0, b=0),
+            polar = dict(
+                radialaxis = dict( showticklabels=False, ),
+                angularaxis = dict(showticklabels=False,)
+            ),
+        )
+        fig.update_layout(showlegend=False)
+        return fig
+    else: 
+        theta_dict={0:'name_Salida', 1:'name_Llegada'}
+        rutas=topNRutas2(df, n_top)
+        
+        fig = px.line_polar(rutas, r='travel_time', theta=theta_dict[sentido], )#
+
+        fig.update_traces(fill='toself',line_color ="#18bc9c")
+        fig.update_layout(height=150,width=190, font = dict(size=7), 
+                          margin=dict(l=0, r=0, t=0, b=0))
+        return fig 
+    
 def topEstaciones(df): 
     
     cols_llegada_estacion=['Longitud_Llegada','Latitud_Llegada', 'Distrito_Llegada', 'idplug_station' ]
@@ -166,6 +231,7 @@ def GraficoSituacionMapa(situaciones, grafico):
     fig.update_layout(hovermode="x unified")
     title= {0:'Bases libres por estacion', 1:'Bicis disponibles por estacion' }
     fig.update_layout(
+        font = dict(size=10),
         title=title[grafico],
         margin=dict(l=0, r=0, t=0, b=0),
         autosize=True,
@@ -182,7 +248,8 @@ def GraficoSituacionMapa(situaciones, grafico):
             style= 'carto-positron' # 'open-street-map'
             
         ),
-        hoverlabel_align = 'right'
+        hoverlabel_align = 'auto', 
+        #legend=dict(font= dict(size=12))
     )
     return fig
 # def workCloudGeneral(itinerarios_bases): 

@@ -60,7 +60,7 @@ def mapaBases( semana,hora, radio):
         ] 
 cardRutas = dbc.Card(
     [
-        dbc.CardHeader("Estaciones BiciMAD por distrito", style = {"background-color":"#ecf0f1"}), 
+        dbc.CardHeader("Rutas más frecuentes", style = {"background-color":"#ecf0f1"}), 
         dbc.CardBody([
             dbc.Row([
                 dbc.RadioItems(
@@ -75,9 +75,18 @@ cardRutas = dbc.Card(
     ],
     className="h-100",
 )
-
+cardPolar=dbc.Card(
+    [
+        dbc.CardHeader("Tiempo medio de viaje", style = {"background-color":"#ecf0f1"}),
+        dbc.CardBody([
+            html.Div(id="polar-display", style = {"padding": "1rem", "width" : "100%", "vertical-align":"middle","horizontal-align":"middle", })
+        ])
+    ]
+)
 @callback(
+    
     Output('rutas-display', 'children'),
+    Output('polar-display', 'children'),
     #Output('click-data', 'children'),    
     Input('radioRuta', 'value'), 
     Input('memoryBase', 'data'),
@@ -86,11 +95,14 @@ cardRutas = dbc.Card(
 def display_click_data(radio, clickData, semana, hora):
     
     if clickData==None: 
-        return[dbc.Row([
+        return([dbc.Row([
                 dcc.Graph(id='MapaRutas',figure = F.GráficoMapasRutas("vacio", 10), 
-                          config={'displayModeBar': False})
-            ])
-        ] 
+                          config={'displayModeBar': False})])],
+               [dbc.Row([
+                dcc.Graph(id='PolarTime',figure = F.linepolar('vacio'), 
+                          config={'displayModeBar': False}, 
+                          style={"horizontal-align":"middle"})], style={"horizontal-align":"middle"} )],
+               ) 
     
     estacion=int(clickData['points'][0]['customdata'][2])
     
@@ -103,11 +115,12 @@ def display_click_data(radio, clickData, semana, hora):
     itinerarios=itinerarios[ (itinerarios['dayofweek']==semana) & (itinerarios['hour']==hora) ]
     
      
-    return[dbc.Row([
+    return([dbc.Row([
                 dcc.Graph(id='MapaRutas',figure = F.GráficoMapasRutas(itinerarios, 10,radio, estacion ),
-                          config={'displayModeBar': False})
-            ])
-        ]  
+                          config={'displayModeBar': False})])],
+            [dbc.Row([
+                dcc.Graph(id='PolarTime',figure = F.linepolar(itinerarios,radio,8),
+                          config={'displayModeBar': False})])]  )
 
 
 layout = html.Div(
@@ -150,15 +163,9 @@ layout = html.Div(
         html.Hr(),
         dbc.Row(
             [
-                dbc.Col( [cardBases], width=5),
+                dbc.Col( [cardBases], width=4),
                 dbc.Col([cardRutas ], width=4), 
-                dbc.Col( html.Div([
-            dcc.Markdown("""
-                **Click Data**
-
-                Click on points in the graph.
-            """),
-            html.Pre(id='click-data')]), width=2)    
+                dbc.Col( dbc.Row(cardPolar) , width=4)    
                 
             ]
         )
