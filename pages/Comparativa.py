@@ -12,8 +12,8 @@ import json
 
 dash.register_page(__name__,  name='Comparativa') # '/' is home page
 
-situacion= pd.read_parquet('Data/SituacionEstaciones/situaciones.parquet')
-itinerarios_bases=pd.read_parquet('Data/Itinerarios/itinerarios_bases.parquet')
+situacion= pd.read_parquet('Data/SituacionEstaciones/situaciones2.parquet')
+itinerarios_bases=pd.read_parquet('Data/Itinerarios/itinerarios_bases3.parquet')
 bases=pd.read_parquet('Data/Bases/basesSituaciones.parquet')
 nums=itinerarios_bases.idplug_station.unique()
 situacion2=situacion[situacion['number'].isin(nums)]
@@ -78,12 +78,12 @@ cardRutas = dbc.Card(
 
 @callback(
     Output('rutas-display', 'children'),
-    #Output('click-data', 'children'),
-    # Input('radioSemana', 'value'),
-    # Input('Hora', 'value'),
+    #Output('click-data', 'children'),    
     Input('radioRuta', 'value'), 
-    Input('memoryBase', 'data'))
-def display_click_data(radio, clickData):
+    Input('memoryBase', 'data'),
+    Input('radioSemana', 'value'),
+    Input('Hora', 'value'))
+def display_click_data(radio, clickData, semana, hora):
     
     if clickData==None: 
         return[dbc.Row([
@@ -100,6 +100,7 @@ def display_click_data(radio, clickData):
     else: 
         itinerarios=itinerarios_bases[itinerarios_bases['idunplug_station']==estacion]
     
+    itinerarios=itinerarios[ (itinerarios['dayofweek']==semana) & (itinerarios['hour']==hora) ]
     
      
     return[dbc.Row([

@@ -8,8 +8,8 @@ from dash import html
 height = 300
 def topNRutas(df, n_top ): 
     cols_rutas=['Origen_destino','Latitud_Salida','Longitud_Salida','Distrito_Salida','Latitud_Llegada','Longitud_Llegada','Distrito_Llegada', 'idplug_station', 'idunplug_station' ]
-    df_rutas=df[df['idplug_station']!=df['idunplug_station'] ].groupby(cols_rutas)['return_date'].count().to_frame().reset_index().sort_values('return_date', ascending=False)
-    df_rutas.rename(columns= {'return_date': 'viajes'},  inplace=True )
+    df_rutas=df[df['idplug_station']!=df['idunplug_station'] ].groupby(cols_rutas)['user_type'].count().to_frame().reset_index().sort_values('user_type', ascending=False)
+    df_rutas.rename(columns= {'user_type': 'viajes'},  inplace=True )
     topRutas=df_rutas.head(25)
     topRutas.loc[:,'ruta']=topRutas.apply(lambda x: sorted([x.Longitud_Salida, x.Latitud_Salida, x.Longitud_Llegada, x.Latitud_Llegada]), axis=1)
     topRutas.loc[:,'ruta']=topRutas['ruta'].apply(lambda x: ' '.join([str(word) for word in x]))
@@ -95,7 +95,7 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
         top_rutas=topNRutas(df_itinerarios,n_top )
         top_estaciones=topEstaciones(top_rutas) 
         
-        tamano_lines=0.005
+        tamano_lines=0.005*12*7
         if tipo==0:
             top_estaciones2=top_estaciones[top_estaciones['numero']!=estacion]
         elif tipo==1: 
@@ -145,7 +145,7 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
 # funciones para situaciones
 
 def filtrarHoraDiaSeman(sit, dia, hora): 
-    sit_filt=sit[ (sit['weekDay']==dia) & (sit['hour']==hora)]
+    sit_filt=sit[ (sit['dayofweek']==dia) & (sit['hour']==hora)]
     cols_grup=['number', 'longitude', 'latitude', 'name', 'total_bases']
     sit_filt2=sit_filt.groupby(cols_grup )[['free_bases', 'dock_bikes']].mean()
     
