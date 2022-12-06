@@ -72,13 +72,13 @@ layout = dbc.Container(
 
         html.Hr(),           
 
-        dbc.Row([
-            dbc.Col(dcc.DatePickerRange(id='my-date-picker-range',min_date_allowed=date(2019, 8, 1), max_date_allowed=date(2020, 1, 7), initial_visible_month=date(2020, 1, 1), end_date=date(2020, 1, 7))),
+        # dbc.Row([
+        #     dbc.Col(dcc.DatePickerRange(id='my-date-picker-range',min_date_allowed=date(2019, 8, 1), max_date_allowed=date(2020, 1, 7), initial_visible_month=date(2020, 1, 1), end_date=date(2020, 1, 7))),
             
-        ], justify='start'), # center, end, between, around
+        # ], justify='start'), # center, end, between, around
 
         dbc.Row([
-            dbc.Col(dcc.Graph(id='output-container-date-picker-range1', style = {"display": "none" }) )
+            dbc.Col(dcc.Graph(figure=F1.update_prediction()) )
         ])
 
     ],
@@ -86,44 +86,4 @@ layout = dbc.Container(
     className="mt-3"
 )
 
-@callback(
-    Output('output-container-date-picker-range1', 'figure'),
-    Output("output-container-date-picker-range1", "style"),
-    Input('my-date-picker-range', 'start_date'),
-    Input('my-date-picker-range', 'end_date'))
 
-def update_prediction(start_date, end_date):
-
-    fiestas_madrid = pd.DataFrame({
-        'holiday': 'fiestas',
-        'ds': pd.to_datetime(['2019-08-15', '2019-10-12',
-                                '2019-11-01', '2019-11-09',
-                                '2019-12-06', '2019-12-09',
-                                '2019-12-25', '2020-01-01', 
-                                '2020-01-06']),
-        'lower_window': -1,
-        'upper_window': 0,
-    })
-
-    model = pickle.load(open('./Predictions/demandPredicition1.pkl', 'rb'))
-
-    forecast = model.make_future_dataframe(periods = 24*4, freq = "H")
-    forecast = F1.is_friday(forecast)
-    forecast = F1.is_weekend(forecast)
-    forecast = F1.is_laborable(forecast)
-    forecast = F1.entrada_trabajo(forecast,fiestas_madrid)
-
-    forecast = model.predict(forecast)
-    forecast["yhat"] = np.exp(forecast["yhat"])
-
-    fig = go.Figure(go.Scatter(
-        x = forecast['ds'].iloc[-24*4:],
-        y = forecast['yhat'].iloc[-24*4:],
-        mode='lines',
-        name = "Predicción",
-        marker_color = "#18bc9c"
-    ))
-
-    fig.update_layout(title_text="Predicción demanda BiciMAD", yaxis_title="Demand", plot_bgcolor='rgba(0,0,0,0)')
-
-    return (fig,{"display":"block"})
