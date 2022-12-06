@@ -46,16 +46,17 @@ def mapaPrediccion(itinerarios_bases,distribuciones, prediccion, salida_llegada,
     print(prediccion)
     print(type(prediccion))
     fig = px.scatter_mapbox(distribuciones_filt, lat="Latitud", lon="Longitud",   size=dicSalidaLlegada[salida_llegada], 
-                            zoom = 12, color_discrete_sequence=px.colors.qualitative.Prism, )
+                            zoom = 12,  )#color_discrete_sequence=px.colors.qualitative.Prism,
                 #color_discrete_sequence=[to_hex(c) for c in sns.color_palette('colorblind', 15)])
     # fig.update_traces(hovertemplate=None)
-
+    # fig.update_traces(
+    #     marker=go.scattermapbox.Marker(symbol='circle',color="#ecf0f1")
+    # )
     fig.update_layout(
         
         #autosize=True,
         showlegend=True,
-
-        height = 650,
+        #height = 650,
         mapbox=dict(
         bearing=0,
         center=dict(

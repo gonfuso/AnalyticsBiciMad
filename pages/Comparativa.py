@@ -79,7 +79,7 @@ cardPolar=dbc.Card(
     [
         dbc.CardHeader("Tiempo medio de viaje", style = {"background-color":"#ecf0f1"}),
         dbc.CardBody([
-            html.Div(id="polar-display", style = {"padding": "1rem", "width" : "100%", "vertical-align":"middle","horizontal-align":"middle", })
+            html.Div(id="polar-display", style = { "vertical-align":"middle","horizontal-align":"middle", })
         ])
     ]
 )
@@ -178,9 +178,9 @@ layout = html.Div(
         html.Hr(),
         dbc.Row(
             [
-                dbc.Col( [cardBases], width=4),
+                dbc.Col( [cardBases], width=5),
                 dbc.Col([cardRutas ], width=4), 
-                dbc.Col( [dbc.Row(cardPolar),dbc.Row(cardPolar)  ], width=4)    #cardHist
+                dbc.Col( [dbc.Row(cardPolar),dbc.Row(cardPolar)  ], width=3)    #cardHist
                 
             ]
         )
