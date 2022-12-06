@@ -9,6 +9,7 @@ from prophet import Prophet
 from datetime import timedelta, date, datetime
 import numpy as np
 import funciones1 as F1
+import funciones as F
 
 dash.register_page(__name__, name='Predicciones') # '/' is home page
 
@@ -16,6 +17,12 @@ today = pd.to_datetime(date(2019,12,12))
 hora = today.hour
 dia = today.dayofweek
 mes = today.month
+forecast=F1.predict()
+forecast=forecast[forecast.ds.dt.month==12]
+forecast['day']=forecast.ds.dt.day
+forecast['hora']=forecast.ds.dt.hour
+forecast['weekDay']=forecast.ds.dt.weekday
+
 
 # Si se actualizase diariamente:
 # hora = datetime.now().hour
@@ -29,10 +36,10 @@ colors_hora[hora]="#18bc9c"
 colors_mes = ['lightslategray']*13
 colors_mes[mes]="#18bc9c"
 
-itinerarios_bases = pd.read_parquet('./Data/Itinerarios/itinerarios_bases.parquet')
+itinerarios_bases = pd.read_parquet('./Data/Itinerarios/itinerarios_bases3.parquet')
 itinerarios_bases["unplug_hourTime"] = pd.to_datetime(itinerarios_bases["unplug_hourTime"])
 demanda = itinerarios_bases.groupby("unplug_hourTime").size().reset_index(name='Count')
-
+distribuciones=F.DistrubicionEstaciones(itinerarios_bases)
 barrios_dropdown_options = [{'label':x, 'value':x} for x in sorted(itinerarios_bases["Barrio_Salida"].unique())]
 
 layout = dbc.Container(
@@ -79,11 +86,67 @@ layout = dbc.Container(
 
         dbc.Row([
             dbc.Col(dcc.Graph(figure=F1.update_prediction()) )
+        ]), 
+        
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([dbc.CardHeader('Filtros para la prediccion',style = {"background-color":"#ecf0f1"}), 
+                    dbc.CardBody([
+                        dbc.Row([
+                                        dbc.Row(html.P(html.P('Hora',style={"color":"#18bc9c", "vertical-align":"bottom"}))),
+                                        dbc.Row(dbc.Input(id='Hora',type='number', min=0, max=23, step=1, value=7), style= {'vertical-align': 'bottom'})
+                                    ], style = {"padding":"1rem 1rem"}),
+                                dbc.Row([
+                                        dbc.Row(html.P(html.P('Día de la semana',style={"color":"#18bc9c", "vertical-align":"bottom"}))),
+                                        dbc.Row(dbc.RadioItems(
+                                            options=[
+                                                {"label": "Día 12", "value": 12},
+                                                {"label": "Día 13", "value": 13},
+                                                {"label": "Día 14", "value": 14},
+                                                {"label": "Día 15", "value": 15},
+                                                                            ],
+                                            value=12,id="radioSemana",inline=True),style= {'vertical-align': 'bottom'} )
+                                        ], style = {"padding":"1rem 1rem"}),
+                                dbc.Row([
+                                        dbc.Col(html.P(html.P('Prediccion formato',style={"color":"#18bc9c", "vertical-align":"bottom"}))),
+                                        dbc.Col(dbc.RadioItems(
+                                            options=[
+                                                {"label": "Salida", "value": 0},
+                                                {"label": "Llegada", "value": 1},                                                       
+                                                ],
+                                            value=0,id="radioLlegadaSalida",inline=True),style= {'vertical-align': 'bottom'} )
+                                        ], style = {"padding":"1rem 1rem"})
+                            ])
+                    ])
+                    ],width=5, style = {"padding":"1rem 1rem"} ),
+                 
+            dbc.Col([
+                dbc.Card([dbc.CardHeader("Mapa de la prediccion", style = {"background-color":"#ecf0f1"}),
+                            dbc.CardBody([
+                                html.Div(id='Display-MapaPrediccion')]) 
+                            ])
+                            ], style = {"padding":"1rem 1rem"})
         ])
+                    
+        
+        
 
     ],
     fluid = True,
     className="mt-3"
 )
 
+@callback(
+    Output('Display-MapaPrediccion', 'children'), 
+    Input('radioSemana', 'value'), 
+    Input('Hora', 'value'), 
+    Input('radioLlegadaSalida', 'value')
+)
+def displayMapaPrediccion(dia,hora,llegada_salida): 
+    
+    
+    forecast_filt=forecast[(forecast['day']==dia)&(forecast['hora']==hora)]
+    
+    return[dbc.Row(dcc.Graph('mapa-prediccion', figure= F.mapaPrediccion(itinerarios_bases,distribuciones, forecast_filt['yhat'].values[0], llegada_salida, forecast_filt['weekDay'].values[0], hora) ))]#figure= F.mapaPrediccion(itinerarios_bases, forecast_filt['yhat'], llegada_salida, forecast_filt.ds.dt.weekday, hora)
+    
 

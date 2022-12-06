@@ -56,8 +56,7 @@ def entryWork(df,holidays):
     
     return df
 
-def update_prediction():
-
+def predict(): 
     model = pickle.load(open('./Predictions/predictionProphet.pkl', 'rb'))
 
     forecast = model.make_future_dataframe(periods = 24*4, freq = "H")
@@ -68,6 +67,11 @@ def update_prediction():
 
     forecast = model.predict(forecast)
     forecast["yhat"] = np.exp(forecast["yhat"])
+    return forecast
+
+def update_prediction():
+
+    forecast=predict()
 
     fig = go.Figure(go.Scatter(
         x = forecast['ds'].iloc[-24*4:],

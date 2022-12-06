@@ -6,6 +6,72 @@ import plotly.graph_objects as go
 import dash_core_components as dcc
 from dash import html
 height = 300
+def DistrubicionEstaciones(itinerarios_bases): 
+    cols_grup=['idplug_station','Latitud_Llegada', 'Longitud_Llegada', 'dayofweek', 'hour']
+    df_llegada = itinerarios_bases.groupby(cols_grup)['status'].count().to_frame().reset_index()
+    df_llegada.rename(columns={'status': 'viajes_llegada', 'idplug_station': 'estacion'}, inplace=True)
+    # Percentage by lambda and DataFrame.apply() method.
+
+    df3 = df_llegada.groupby(['dayofweek', 'hour'])['viajes_llegada'].sum().to_dict()#.reset_index()
+    df_llegada['dict']=df_llegada.apply(lambda x: (x.dayofweek,x.hour),axis=1)
+    df_llegada['viajes_llegada%']=df_llegada.apply(lambda x: x.viajes_llegada/df3[x.dict], axis=1)
+    df_llegada_def=df_llegada[['estacion','Latitud_Llegada', 'Longitud_Llegada','dayofweek', 'hour', 'viajes_llegada', 'viajes_llegada%' ]]
+    df_llegada_def.rename(columns={'Latitud_Llegada':'Latitud','Longitud_Llegada':'Longitud' }, inplace=True)
+
+
+    cols_grup2=['idunplug_station','Latitud_Salida', 'Longitud_Salida', 'dayofweek', 'hour']
+    df_salida = itinerarios_bases.groupby(cols_grup2)['status'].count().to_frame().reset_index()
+    df_salida.rename(columns={'status': 'viajes_salida', 'idunplug_station': 'estacion'}, inplace=True)
+    # Percentage by lambda and DataFrame.apply() method.
+
+    df3 = df_salida.groupby(['dayofweek', 'hour'])['viajes_salida'].sum().to_dict()#.reset_index()
+    df_salida['dict']=df_salida.apply(lambda x: (x.dayofweek,x.hour),axis=1)
+    df_salida['viajes_salida%']=df_salida.apply(lambda x: x.viajes_salida/df3[x.dict], axis=1)
+    df_salida_def=df_salida[['estacion','Latitud_Salida', 'Longitud_Salida','dayofweek', 'hour', 'viajes_salida', 'viajes_salida%' ]]
+    
+    df_salida_def.rename(columns={'Latitud_Salida':'Latitud','Longitud_Salida':'Longitud' }, inplace=True)
+
+    return pd.merge(df_llegada_def,df_salida_def, how='inner', on=['estacion','dayofweek', 'hour', 'Latitud', 'Longitud'])
+
+def mapaPrediccion(itinerarios_bases,distribuciones, prediccion, salida_llegada,dia, hora ): 
+    dicSalidaLlegada={0:'prediccion_llegada', 1:'prediccion_salida' }
+    
+    
+
+    
+    distribuciones_filt=distribuciones[(distribuciones['dayofweek']==dia)]
+    distribuciones_filt=distribuciones_filt[distribuciones_filt['hour']==hora]
+    distribuciones_filt['prediccion_llegada']= distribuciones_filt['viajes_llegada%']*prediccion
+    distribuciones_filt['prediccion_salida']= distribuciones_filt['viajes_salida%']*prediccion
+    print(prediccion)
+    print(type(prediccion))
+    fig = px.scatter_mapbox(distribuciones_filt, lat="Latitud", lon="Longitud",   size=dicSalidaLlegada[salida_llegada], 
+                            zoom = 12,  )#color_discrete_sequence=px.colors.qualitative.Prism,
+                #color_discrete_sequence=[to_hex(c) for c in sns.color_palette('colorblind', 15)])
+    # fig.update_traces(hovertemplate=None)
+    # fig.update_traces(
+    #     marker=go.scattermapbox.Marker(symbol='circle',color="#ecf0f1")
+    # )
+    fig.update_layout(
+        
+        #autosize=True,
+        showlegend=True,
+        #height = 650,
+        mapbox=dict(
+        bearing=0,
+        center=dict(
+            lat=40.435,
+            lon=-3.69
+        ),
+        zoom=11.5,
+        style= 'carto-positron' # 'open-street-map'
+        ),
+        legend=dict(orientation="h",yanchor="bottom",y=1.02,xanchor="right",x=1),
+        margin=dict(l=1,r=1, b=10,t=20,pad = 5),
+        hoverlabel_align = 'right'
+        )
+    return fig
+
 def topNRutas(df, n_top ): 
     cols_rutas=['Origen_destino','Latitud_Salida','Longitud_Salida','Distrito_Salida','Latitud_Llegada','Longitud_Llegada','Distrito_Llegada', 'idplug_station', 'idunplug_station' ]
     df_rutas=df[df['idplug_station']!=df['idunplug_station'] ].groupby(cols_rutas)['user_type'].count().to_frame().reset_index().sort_values('user_type', ascending=False)
@@ -81,8 +147,8 @@ def linepolar(df,sentido=None, n_top=None):
                 mode = 'markers',
             ))
         fig.update_layout(
-            height=150,
-            width=350,
+            height=130,
+            width=300,
             font = dict(size=7),
             margin=dict(l=0, r=0, t=0, b=0),
             polar = dict(
@@ -96,10 +162,10 @@ def linepolar(df,sentido=None, n_top=None):
         theta_dict={0:'name_Salida', 1:'name_Llegada'}
         rutas=topNRutas2(df, n_top)
         
-        fig = px.line_polar(rutas, r='travel_time', theta=theta_dict[sentido], )#
+        fig = px.line_polar(rutas, r='travel_time', theta=theta_dict[sentido],line_close=True )#
 
         fig.update_traces(fill='toself',line_color ="#18bc9c")
-        fig.update_layout(height=150,width=190, font = dict(size=7), 
+        fig.update_layout(height=130,width=300, font = dict(size=7), 
                           margin=dict(l=0, r=0, t=0, b=0))
         return fig 
     

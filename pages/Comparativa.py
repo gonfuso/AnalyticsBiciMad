@@ -79,7 +79,15 @@ cardPolar=dbc.Card(
     [
         dbc.CardHeader("Tiempo medio de viaje", style = {"background-color":"#ecf0f1"}),
         dbc.CardBody([
-            html.Div(id="polar-display", style = {"padding": "1rem", "width" : "100%", "vertical-align":"middle","horizontal-align":"middle", })
+            html.Div(id="polar-display", style = { "vertical-align":"middle","horizontal-align":"middle", })
+        ])
+    ]
+)
+cardHist=dbc.Card(
+    [
+        dbc.CardHeader("Distribucion de las bases", style = {"background-color":"#ecf0f1"}),
+        dbc.CardBody([
+            html.Div(id="hist-display", style = {"padding": "1rem", "width" : "100%", "vertical-align":"middle","horizontal-align":"middle", })
         ])
     ]
 )
@@ -87,7 +95,7 @@ cardPolar=dbc.Card(
     
     Output('rutas-display', 'children'),
     Output('polar-display', 'children'),
-    #Output('click-data', 'children'),    
+    #Output('hist-display', 'children'),
     Input('radioRuta', 'value'), 
     Input('memoryBase', 'data'),
     Input('radioSemana', 'value'),
@@ -120,7 +128,14 @@ def display_click_data(radio, clickData, semana, hora):
                           config={'displayModeBar': False})])],
             [dbc.Row([
                 dcc.Graph(id='PolarTime',figure = F.linepolar(itinerarios,radio,8),
-                          config={'displayModeBar': False})])]  )
+                          config={'displayModeBar': False})
+                
+                ])],
+            # [dbc.Row([ 
+            #     dcc.Graph(id='HistBikes', figure = F.linepolar(itinerarios,radio,8) , 
+            #               config={'displayModeBar': False})
+            #     ])],
+            )
 
 
 layout = html.Div(
@@ -163,9 +178,9 @@ layout = html.Div(
         html.Hr(),
         dbc.Row(
             [
-                dbc.Col( [cardBases], width=4),
+                dbc.Col( [cardBases], width=5),
                 dbc.Col([cardRutas ], width=4), 
-                dbc.Col( dbc.Row(cardPolar) , width=4)    
+                dbc.Col( [dbc.Row(cardPolar),dbc.Row(cardPolar)  ], width=3)    #cardHist
                 
             ]
         )
