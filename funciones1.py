@@ -60,7 +60,6 @@ def update_prediction():
 
     model = pickle.load(open('./Predictions/predictionProphet.pkl', 'rb'))
 
-
     forecast = model.make_future_dataframe(periods = 24*4, freq = "H")
     forecast = itsFriday(forecast)
     forecast = itsWeekend(forecast)
@@ -83,8 +82,8 @@ def update_prediction():
     return fig
 
 
-def gaugeDisplay(df, date, value, typeofday): 
-    df_filtrado = df[(df["status"]==value) & (df["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date)) & (df["typeofday"].isin(typeofday))]
+def gaugeDisplay(df, date, value): 
+    df_filtrado = df[(df["status"]==value) & (df["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date))]
     date_init_week = date - timedelta(days=date.dayofweek)
     lost_this_week = round(df_filtrado[df_filtrado["unplug_hourTime"].dt.tz_localize(None)>pd.to_datetime(date_init_week)].groupby(df_filtrado["unplug_hourTime"].dt.isocalendar().week).size().reset_index(name='Count')["Count"].mean())
     avg_lost_per_week = round(df_filtrado[df_filtrado["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date_init_week)].groupby(df_filtrado["unplug_hourTime"].dt.isocalendar().week).size().reset_index(name='Count')["Count"].mean())
@@ -105,8 +104,8 @@ def gaugeDisplay(df, date, value, typeofday):
 
     return fig
 
-def timelineDisplay(df,date, value, typeofday):
-    df_filtrado = df[(df["status"]==value) & (df["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date)) & (df["typeofday"].isin(typeofday))]
+def timelineDisplay(df,date, value):
+    df_filtrado = df[(df["status"]==value) & (df["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date)) ]
 
     fig = go.Figure(go.Scatter(
         x = df_filtrado.groupby(df_filtrado["unplug_hourTime"].dt.date).size().reset_index(name='Count')['unplug_hourTime'],
@@ -133,9 +132,9 @@ def timelineDisplay(df,date, value, typeofday):
     return fig
 
 
-def pyramidDisplay(df, value, typeofday):
+def pyramidDisplay(df, value):
     df["ageRange"] = df["ageRange"].replace([0,1,2,3,4,5,6],["Ind.","0-16","17-18", "19-26", "27-40", "41-65", "66+"])
-    df = df[(df["travel_time"]<=1440) & (df["travel_time"]>0) & (df["typeofday"].isin(typeofday))]
+    df = df[(df["travel_time"]<=1440) & (df["travel_time"]>0)]
     df1 =df[(df["travel_time"]>value[0]) & (df["travel_time"]<value[1])]
     df1["travel_time"] = df1["travel_time"]/60
     ageRange_1 = df1[df1["user_type"] == 1].groupby("ageRange").agg({"travel_time":"mean"})
@@ -174,8 +173,8 @@ def pyramidDisplay(df, value, typeofday):
     fig.update_xaxes(gridcolor="lightgrey")
     return fig
 
-def mapDisplay(itinerarios_bases, distrito):
-    df = itinerarios_bases[itinerarios_bases["Distrito_Salida"].isin(distrito)]
+def mapDisplay(itinerarios_bases, distrito, typeofday, usertype):
+    df = itinerarios_bases[(itinerarios_bases["Distrito_Salida"].isin(distrito)) & (itinerarios_bases["typeofday"].isin(typeofday)) & (itinerarios_bases["user_type"].isin(usertype))]
     df1 = df.groupby(["idunplug_station", "Distrito_Salida", "Barrio_Salida", "Número de Plazas_Salida", "Latitud_Salida", "Longitud_Salida"]).size().reset_index(name='Count')
 
     fig = px.scatter_mapbox(df1, lat="Latitud_Salida", lon="Longitud_Salida",  color = "Distrito_Salida", size=df1["Count"], 
@@ -187,7 +186,6 @@ def mapDisplay(itinerarios_bases, distrito):
     fig.update_layout(
         #autosize=True,
         showlegend=True,
-        
         height = 650,
         mapbox=dict(
             bearing=0,
@@ -198,9 +196,10 @@ def mapDisplay(itinerarios_bases, distrito):
             zoom=11.5,
             style= 'carto-positron' # 'open-street-map'
         ),
-         legend=dict(orientation="h",yanchor="bottom",y=1.02,xanchor="right",x=1),
+         legend=dict(orientation="h",yanchor="bottom",y=1.02,xanchor="right",x=1, ),
           margin=dict(l=1,r=1, b=10,t=20,pad = 5),
-        hoverlabel_align = 'right'
+        hoverlabel_align = 'right',
+        legend_title_text=None
     )
 
     return fig
@@ -225,8 +224,8 @@ def wordcloudDisplay(df):
 
     return fig
 
-def wordcloudDisplay2(df, x): 
-    df=df.astype({x: str})
+def wordcloudDisplay2(df, x, typeofday, usertype): 
+    df=df[(df["typeofday"].isin(typeofday)) & (df["user_type"].isin(usertype))].astype({x: str})
     barrios_llegada = df[x]
 
     barrios_llegada_wordcloud=["".join(i for i in palabra if not i.isdigit()) for palabra in barrios_llegada]
@@ -237,14 +236,12 @@ def wordcloudDisplay2(df, x):
     wordcloud = WordCloud (
                         background_color = 'white',
                         height = 150,
-                        collocations=False, colormap="YlGnBu").generate_from_frequencies(barrios_frec)
-
-    
+                        collocations=False, colormap="YlGnBu").generate_from_frequencies(barrios_frec)    
 
     return wordcloud.to_image()
 
-def estacionalidadHoras(df, typeofday):
-    demanda = df[df["typeofday"].isin(typeofday)].groupby("unplug_hourTime").size().reset_index(name='Count')
+def estacionalidadHoras(df, typeofday, usertype):
+    demanda = df[(df["typeofday"].isin(typeofday)) & (df["user_type"].isin(usertype))].groupby("unplug_hourTime").size().reset_index(name='Count')
     demanda_agrupada = demanda.groupby(demanda["unplug_hourTime"].dt.hour).agg({'Count':'mean'})
 
     fig=go.Figure(go.Bar(
@@ -257,8 +254,8 @@ def estacionalidadHoras(df, typeofday):
 
     return fig
 
-def estacionalidadDias(df):
-    demanda = df.groupby("unplug_hourTime").size().reset_index(name='Count')
+def estacionalidadDias(df, usertype):
+    demanda = df[df["user_type"].isin(usertype)].groupby("unplug_hourTime").size().reset_index(name='Count')
     demanda_agrupada = demanda.groupby(demanda["unplug_hourTime"].dt.dayofweek).agg({'Count':'mean'})
 
     fig=go.Figure(go.Bar(
@@ -271,8 +268,8 @@ def estacionalidadDias(df):
 
     return fig
 
-def estacionalidadMeses(df, typeofday):
-    demanda = df[df["typeofday"].isin(typeofday)].groupby("unplug_hourTime").size().reset_index(name='Count')
+def estacionalidadMeses(df, typeofday, usertype):
+    demanda = df[(df["typeofday"].isin(typeofday)) & (df["user_type"].isin(usertype))].groupby("unplug_hourTime").size().reset_index(name='Count')   
     demanda_agrupada = demanda.groupby(demanda["unplug_hourTime"].dt.month).agg({'Count':'mean'})
     fig=go.Figure(go.Bar(
             x = [ "Ago", "Sep", "Oct", "Nov", "Dec"],
@@ -325,6 +322,9 @@ def mapRutasDisplay(itinerarios_bases, distrito):
     
     topEstaciones=top10estaciones0.groupby(['Longitud','Latitud']).apply(top_estaciones).reset_index()
 
+    lat_calc =  topEstaciones["Latitud"].mean()
+    long_calc =  topEstaciones["Longitud"].mean()
+
     fig = px.scatter_mapbox(topEstaciones, lat="Latitud", lon="Longitud",  zoom = 50)
 
     for i in range(topRutasUnicas.shape[0]): 
@@ -335,10 +335,10 @@ def mapRutasDisplay(itinerarios_bases, distrito):
                 mode = "markers+lines",
                 lon = [valores['Longitud_Salida'], valores['Longitud_Llegada']],
                 lat = [valores['Latitud_Salida'], valores['Latitud_Llegada']],
-                line= {'width':valores['viajes']*0.007} ,
+                line= {'width':valores['viajes']*0.006} ,
                 name= 'Ruta '+str(1+i), 
-                marker_color = ["#18bc9c"]*20,
-                fillcolor = "#18bc9c"
+                marker_color = ["#395B64"]*20,
+                line_color = "#18bc9c"
             ))
 
     fig.update_layout(
@@ -350,8 +350,8 @@ def mapRutasDisplay(itinerarios_bases, distrito):
         mapbox=dict(
             bearing=0,
             center=dict(
-                lat=40.435,
-                lon=-3.69
+                lat=lat_calc,
+                lon=long_calc
             ),
             zoom=12,
             style= 'carto-positron', # 'open-street-map'    
@@ -378,7 +378,11 @@ def top_estaciones(df):
         return(pd.Series(dict(zip(cols,datos))))
 
 
-def sunburstItinerarios(itinerarios_bases, N, M):
+def sunburstItinerarios(itinerarios_bases, N, M, distrito):
+    if distrito == None:
+            itinerarios_bases = itinerarios_bases
+    else:
+            itinerarios_bases = itinerarios_bases[itinerarios_bases["Distrito_Salida"]==distrito]
     estaciones_mas_concurridas = itinerarios_bases.groupby(["idunplug_station"]).size().reset_index().rename(columns={0:"count"}).sort_values(by=['count'], ascending = False).head(N).reset_index(drop=True)
     estaciones_mas_concurridas1 = itinerarios_bases[itinerarios_bases["idunplug_station"].isin(estaciones_mas_concurridas["idunplug_station"])]
 
@@ -407,8 +411,8 @@ def sunburstItinerarios(itinerarios_bases, N, M):
     return fig
 
 
-def tablaInfo(itinerarios_bases, distritos, typeofday):
-    itinerarios_bases = itinerarios_bases[(itinerarios_bases["Distrito_Salida"].isin(distritos))&(itinerarios_bases["typeofday"].isin(typeofday))]
+def tablaInfo(itinerarios_bases, distritos, typeofday, usertype):
+    itinerarios_bases = itinerarios_bases[(itinerarios_bases["Distrito_Salida"].isin(distritos))&(itinerarios_bases["typeofday"].isin(typeofday)) &(itinerarios_bases["user_type"].isin(usertype))]
     itinerarios_bases["lost"] = np.where(itinerarios_bases["status"]=="long_rental",1,0)
     itinerarios_bases["change_bike"] = np.where(itinerarios_bases["status"]=="change_bike",1,0)
     itinerarios_bases["successful"] = np.where(itinerarios_bases["status"]=="short_rental",1,0)

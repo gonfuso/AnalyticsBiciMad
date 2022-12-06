@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import dash
-from dash import Input, Output, dcc, html, callback, dash_table
+from dash import Input, Output, dcc, html, callback, dash_table, State
 import plotly.express as px
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
@@ -36,7 +36,6 @@ occupancyLow = occupancyLow.drop(occupancyLow[(occupancyLow.free_bases == 0) & (
 occupancyHigh = occupancyHigh[occupancyHigh["_id"]>80]
 occupancyLow = occupancyLow[occupancyLow["_id"]>90]
 
-
 today = pd.to_datetime(date(2019,12,12))
 
 cardAlert = dbc.Card(
@@ -59,7 +58,6 @@ cardAlert = dbc.Card(
         
     ], className="h-100"
 )
-
 
 @callback(
     Output('dash-table', "children"),
@@ -124,19 +122,20 @@ cardTable = dbc.Card([
 @callback(
     Output("table-display", "children"),
     [Input("select-distrito", "value"), 
-    Input("typeofday-checklist", "value")]
+    Input("typeofday-checklist", "value"),
+    Input("usertype-checklist", "value")]
 )
-def displayTable(value, typeofday):
+def displayTable(value, typeofday, usertype):
     if (value == None) | (value == []):
         return [
         dbc.Row([
-            dcc.Graph(figure = F1.tablaInfo(itinerarios_bases, itinerarios_bases.Distrito_Salida.unique(), typeofday), config={'displayModeBar': False})
+            dcc.Graph(figure = F1.tablaInfo(itinerarios_bases, itinerarios_bases.Distrito_Salida.unique(), typeofday, usertype), config={'displayModeBar': False})
         ])
     ]
     else:
         return [
             dbc.Row([
-                dcc.Graph(figure = F1.tablaInfo(itinerarios_bases, value, typeofday))
+                dcc.Graph(figure = F1.tablaInfo(itinerarios_bases, value, typeofday, usertype))
             ])
         ]
 
@@ -169,14 +168,13 @@ cardAge = dbc.Card(
 )
 @callback(
     Output("edades-display", "children"),
-    [Input("traveltime-slider", "value"),
-    Input("typeofday-checklist", "value")]
+    [Input("traveltime-slider", "value")]
 )
-def display_edades(value, typeofday):
+def display_edades(value):
     return [
         dbc.Row(
             children = [
-                dcc.Graph(figure = F1.pyramidDisplay(itinerarios_bases, value, typeofday), config={'displayModeBar': False})
+                dcc.Graph(figure = F1.pyramidDisplay(itinerarios_bases, value), config={'displayModeBar': False})
             ]
         ),
     ]
@@ -207,19 +205,18 @@ cardGauge = dbc.Card(
 
 @callback(
     Output("status-display", "children"),
-    [Input("btn-status", "value"),
-    Input("typeofday-checklist", "value")]
+    [Input("btn-status", "value")]
 )
-def display_status(value, typeofday):
+def display_status(value):
     return [
         dbc.Row(
                 children = [
-                    dcc.Graph(figure = F1.gaugeDisplay(itinerarios_bases, today, value, typeofday), config={'displayModeBar': False})
+                    dcc.Graph(figure = F1.gaugeDisplay(itinerarios_bases, today, value), config={'displayModeBar': False})
                 ]
             ),
             dbc.Row(
                 children = [
-                    dcc.Graph(figure = F1.timelineDisplay(itinerarios_bases, today, value, typeofday), config={'displayModeBar': False})
+                    dcc.Graph(figure = F1.timelineDisplay(itinerarios_bases, today, value), config={'displayModeBar': False})
                 ]
             )
     ]
@@ -232,17 +229,24 @@ cardDemandaHoras = dbc.Card(
 )
 @callback(
     Output("dh-display", "children"),
-    Input("typeofday-checklist", "value")
+    [Input("typeofday-checklist", "value"),
+    Input("usertype-checklist", "value")]
 )
-def dh_display(typeofday):
-    return [dcc.Graph(figure = F1.estacionalidadHoras(itinerarios_bases, typeofday))]
+def dh_display(typeofday, usertype):
+    return [dcc.Graph(figure = F1.estacionalidadHoras(itinerarios_bases, typeofday, usertype))]
 
 cardDemandaDias = dbc.Card(
     [
         dbc.CardHeader("Demanda media por día de la semana", style = {"background-color":"#ecf0f1"}), 
-        dbc.CardBody(dcc.Graph(figure = F1.estacionalidadDias(itinerarios_bases)))
+        dbc.CardBody(id = "dd-display")
     ], className="h-100"
 )
+@callback(
+    Output("dd-display", "children"),
+    [Input("usertype-checklist", "value")]
+)
+def dh_display(usertype):
+    return [dcc.Graph(figure = F1.estacionalidadDias(itinerarios_bases, usertype))]
 
 cardDemandaMeses = dbc.Card(
     [
@@ -252,10 +256,11 @@ cardDemandaMeses = dbc.Card(
 )
 @callback(
     Output("dm-display", "children"),
-    Input("typeofday-checklist", "value")
+    [Input("typeofday-checklist", "value"),
+    Input("usertype-checklist", "value")]
 )
-def dm_display(typeofday):
-    return [dcc.Graph(figure = F1.estacionalidadMeses(itinerarios_bases, typeofday))]
+def dm_display(typeofday, usertype):
+    return [dcc.Graph(figure = F1.estacionalidadMeses(itinerarios_bases, typeofday, usertype))]
 
 cardMap = dbc.Card(
     [
@@ -277,19 +282,21 @@ cardMap = dbc.Card(
 )
 @callback(
     Output("map-display", "children"),
-    Input("select-distrito", "value")
+    [Input("select-distrito", "value"), 
+    Input("typeofday-checklist", "value"),
+    Input("usertype-checklist", "value")]
 )
-def displayMap(value):
+def displayMap(value, typeofday, usertype):
     if (value == None) | (value == []):
         return [
         dbc.Row([
-            dcc.Graph(figure = F1.mapDisplay(itinerarios_bases, itinerarios_bases.Distrito_Salida.unique()), config={'displayModeBar': False})
+            dcc.Graph(figure = F1.mapDisplay(itinerarios_bases, itinerarios_bases.Distrito_Salida.unique(), typeofday, usertype), config={'displayModeBar': False})
         ])
     ]
     else:
         return [
             dbc.Row([
-                dcc.Graph(figure = F1.mapDisplay(itinerarios_bases, value), config={'displayModeBar': False})
+                dcc.Graph(figure = F1.mapDisplay(itinerarios_bases, value, typeofday, usertype), config={'displayModeBar': False})
             ])
         ]
 
@@ -326,11 +333,13 @@ cardCloud = dbc.Card(
 @callback(
     Output('image_wc', 'src'), 
     [Input('image_wc', 'id'),
-    Input('btn-wc', 'value')]
+    Input('btn-wc', 'value'),
+    Input("typeofday-checklist", "value"),
+    Input("usertype-checklist", "value")]
 )
-def make_image(b, value):
+def make_image(b, value, typeofday, usertype):
     img = BytesIO()
-    F1.wordcloudDisplay2(itinerarios_bases, value).save(img, format='PNG')
+    F1.wordcloudDisplay2(itinerarios_bases, value, typeofday, usertype).save(img, format='PNG')
     return 'data:image/png;base64,{}'.format(base64.b64encode(img.getvalue()).decode())
 
 
@@ -370,11 +379,11 @@ cardSunburstItinerarios = dbc.Card(
         dbc.CardBody([
             dbc.Row([
                 dbc.Col([
-                    dbc.Col(html.P("NºEstaciones de salida:"),width=9),
+                    dbc.Col(html.P("NºEstaciones de salida:"),width=8),
                     dbc.Col(dbc.Input(id="N",type="number", min=0,max=10,step=1, value=5), width=3)
                 ], width = 6),
                 dbc.Col([
-                    dbc.Col(html.P("NºEstaciones de llegada:"), width=9),
+                    dbc.Col(html.P("NºEstaciones de llegada:"), width=8),
                     dbc.Col(dbc.Input(id="M",type="number", min=0,max=10,step=1, value=10), width=3)
                 ], width =6),
             ]),
@@ -385,10 +394,21 @@ cardSunburstItinerarios = dbc.Card(
 @callback(
     Output("sunburst-display", "children"),
     [Input("N", "value"), 
-    Input("M", "value")]
+    Input("M", "value"), 
+    Input("select-Rutasdistrito", "value")]
 )
-def sunburst_display(N, M):
-    return [dcc.Graph(figure = F1.sunburstItinerarios(itinerarios_bases, N,M))]
+def sunburst_display(N, M, distrito):
+    return [dcc.Graph(figure = F1.sunburstItinerarios(itinerarios_bases, N,M, distrito))]
+
+@callback(
+    Output("modal", "is_open"),
+    [Input("open", "n_clicks"), Input("close", "n_clicks")],
+    [State("modal", "is_open")],
+)
+def toggle_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
 
 layout = dbc.Container(
     children = [
@@ -398,18 +418,43 @@ layout = dbc.Container(
                     dbc.Col(html.P(html.P(today.strftime("%d %B, %Y %I%p"),style={"color":"#18bc9c", "vertical-align":"middle"})))
                 ], width = 3, style = {"padding":"1rem 1rem"}), 
                 dbc.Col([
-                    #dbc.Col(html.P(html.P('Día de la semana',style={"color":"#18bc9c", "vertical-align":"bottom"}))),
-                    dbc.Col(dbc.Checklist(
-                        id = "typeofday-checklist",
-                        options=[
-                            {"label": "Laboral", "value": 1},
-                            {"label": "Fin de semana", "value": 0},                                                    
-                            ],
-                        label_checked_style={"color": "#2c3e50"},
-                        input_checked_style={"backgroundColor": "#2c3e50","borderColor": "#5b80a5"},
-                        value=[0, 1],
-                        inline=False),style= {'vertical-align': 'bottom'} )
-                    ], width={"size": 2, "offset": 7}, style = {"padding":"1rem 1rem"})
+                    dbc.Button(className="bi bi-info-circle-fill me-2", id="open", n_clicks=0),
+                    dbc.Modal(
+                        [
+                            dbc.ModalHeader(dbc.ModalTitle("Información de los datos de BiciMAD")),
+                            dbc.ModalBody([
+                                html.H6("Rango de fechas:", style={"color":"#18bc9c" ,"font-weight": "bold"}),
+                                html.P("01/08/2019 - 11/12/31. Julio contiene datos incompletos."),
+                                html.H6("Tipos de usuario:", style={"color":"#18bc9c", "font-weight": "bold"}),
+                                html.Ul([
+                                    html.Li("Anual (1)"),
+                                    html.Li("Ocasional (2)"),
+                                    html.Li("Empleado BiciMad (3)")
+                                ]),
+                                html.H6("Estado de las bicicletas:", style={"color":"#18bc9c", "font-weight": "bold"}),
+                                html.Ul([
+                                    html.Li("Alquiler exitoso: el viaje duró menos de un día y el usuario es anual u ocasional."),
+                                    html.Li("Bicicleta perdida: el viaje duró más de un día y el usuario es anual u ocasional."),
+                                    html.Li("Bicicletas defectuosas: el viaje duró menos de 5 minutos y se devolvió la bicicleta a la misma estación."),
+                                    html.Li("Bicicleta en reparación: el viaje duró más de un día y el usuario es empleado de BiciMAD."),
+                                ]),
+                                html.H6("Ocupación de la estación", style={"color":"#18bc9c", "font-weight": "bold"}),
+                                html.P("Resultado de dividir el número de bicicletas ancladas a una estación en un momento determiando entre el número de bases totales de la estación. "),
+                                html.Ul([
+                                    html.Li("Alta ocupación: mayor al 80%."),
+                                    html.Li("Baja ocupación: menor al 20%."),
+                                ]),
+                            ]),
+                            dbc.ModalFooter(
+                                dbc.Button(
+                                    "Close", id="close", className="ms-auto", n_clicks=0
+                                )
+                            ),
+                        ],
+                        id="modal",
+                        is_open=False,
+                    ),
+                ], width={"size": 1, "offset": 8},style = {"padding-top":"3rem"} )
             ]),
 
             html.Hr(),
@@ -420,9 +465,45 @@ layout = dbc.Container(
                         dbc.Col(cardGauge, width = 8),
                         dbc.Col(cardAge, width = 4), 
                     ], style = {"height":"450px"}),
-                    html.Div(
-                        html.H3("Estacionalidad", style={"color":"#2c3e50", "padding-top":"3rem"}),
-                    ),
+                    html.Div([
+                        dbc.Row([
+                            dbc.Col(
+                                html.H3("Estacionalidad", style={"color":"#2c3e50", "padding-bottom":"2rem"}),
+                                width = 4
+                            ),
+                            dbc.Col([
+                                dbc.Row([
+                                    dbc.Col(html.P("Tipo de día:", style={"font-weight": "bold"}), width=3, ),
+                                    dbc.Col(dbc.Checklist(
+                                        id = "typeofday-checklist",
+                                        options=[
+                                            {"label": "Laboral", "value": 1},
+                                            {"label": "Fin de semana", "value": 0},                                                    
+                                            ],
+                                        label_checked_style={"color": "#2c3e50"},
+                                        input_checked_style={"backgroundColor": "#2c3e50","borderColor": "#5b80a5"},
+                                        value=[0, 1],
+                                        inline=True
+                                    ), width=7),
+                                ]), 
+                                dbc.Row([
+                                    dbc.Col(html.P("Tipo de usuario:", style={"font-weight": "bold"}), width=3),
+                                    dbc.Col(dbc.Checklist(
+                                        id = "usertype-checklist",
+                                        options=[
+                                            {"label": "Anual", "value": 1},
+                                            {"label": "Ocasional", "value": 2}, 
+                                            {"label": "Empleado", "value": 3},                                                    
+                                            ],
+                                        label_checked_style={"color": "#2c3e50"},
+                                        input_checked_style={"backgroundColor": "#2c3e50","borderColor": "#5b80a5"},
+                                        value=[1, 2,3],
+                                        inline=True
+                                    ), width=7), 
+                                ], style={"padding-bottom":"1rem"})
+                            ],width={"size": 6, "offset": 2})
+                        ],style={"padding-top":"3rem", "color":"#2c3e50"} )       
+                ]),
                     dbc.Row([
                         dbc.Col(cardDemandaHoras, width = 4),
                         dbc.Col(cardDemandaDias, width = 4),
