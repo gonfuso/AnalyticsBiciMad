@@ -1,0 +1,15 @@
+pandas
+plotly 
+numpy
+wordcloud
+collections
+prophet 
+datetime
+pickel
+dash_bootstrap_components
+dash 
+matplotlib
+sklearn
+statsmodels
+skforecast
+neuralprophet
