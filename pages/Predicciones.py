@@ -54,15 +54,15 @@ layout = dbc.Container(
             dbc.Col(dcc.Graph(id="avg-demand-day", 
                 figure=go.Figure(
                         data=[go.Bar(
-                            x = demanda.groupby(demanda["unplug_hourTime"].dt.dayofweek).agg({'Count':'mean'}).index,
+                            x = ["L", "M", "X", "J", "V", "S", "D"],
                             y = demanda.groupby(demanda["unplug_hourTime"].dt.dayofweek).agg({'Count':'mean'})['Count'],
                             marker_color=colors_day
                         )],
-                        layout = go.Layout(plot_bgcolor='rgba(0,0,0,0)',height=150, width=300,
+                        layout = go.Layout(plot_bgcolor='rgba(0,0,0,0)',height=150, width=300,  xaxis_title="Media demanda / día",
                         margin=go.layout.Margin(l=50,r=50, b=1,t=50,pad = 5))
                     ),
                 config={'displayModeBar': False}
-            ), width={"size":3,"offset":2}, style = { "margin-top":"-3rem"}),
+            ), width={"size":3,"offset":3}, style = { "margin-top":"-3rem"}),
             dbc.Col(dcc.Graph(id="avg-demand-hour", 
                 figure=go.Figure(
                         data=[go.Bar(
@@ -70,7 +70,7 @@ layout = dbc.Container(
                             y = demanda.groupby(demanda["unplug_hourTime"].dt.hour).agg({'Count':'mean'})['Count'],
                             marker_color=colors_hora
                         )],
-                        layout = go.Layout(plot_bgcolor='rgba(0,0,0,0)', height=150, width=300, yaxis={'visible':False}, title={'text': "Demanda por horas",'x':0.5,'xanchor': 'center','yanchor': 'bottom'},
+                        layout = go.Layout(plot_bgcolor='rgba(0,0,0,0)', height=150, width=300, yaxis={'visible':False}, xaxis_title="Media demanda / hora",
                         margin=go.layout.Margin(l=50,r=50, b=1,t=50,pad = 5))
                     ),
                     config={'displayModeBar': False}
@@ -78,11 +78,6 @@ layout = dbc.Container(
         ], style = {"padding":"1rem 1rem"}), 
 
         html.Hr(),           
-
-        # dbc.Row([
-        #     dbc.Col(dcc.DatePickerRange(id='my-date-picker-range',min_date_allowed=date(2019, 8, 1), max_date_allowed=date(2020, 1, 7), initial_visible_month=date(2020, 1, 1), end_date=date(2020, 1, 7))),
-            
-        # ], justify='start'), # center, end, between, around
 
         dbc.Row([
             dbc.Col(dcc.Graph(figure=F1.update_prediction()) )

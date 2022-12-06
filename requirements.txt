@@ -1,15 +1,18 @@
-pandas
-plotly 
-numpy
-wordcloud
-collections
-prophet 
+######################
+# Package +  version #
+######################
+pandas 1.5.2
+plotly 5.9.0
+numpy 1.21.5
+wordcloud 1.9.2.2
+collections 
+prophet 1.1.1
 datetime
 pickel
-dash_bootstrap_components
-dash 
-matplotlib
-sklearn
-statsmodels
+dash_bootstrap_components 1.2.1
+dash 2.6.2 # MUY IMPORTANTE PARA QUE FUNCIONEN LOS MAPAS
+matplotlib 3.5.2
+scikit-learn 1.0.2
+statsmodels 0.13.2
 skforecast
-neuralprophet
+neuralprophet 0.4.2
