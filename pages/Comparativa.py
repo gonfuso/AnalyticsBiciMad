@@ -169,11 +169,11 @@ layout = html.Div(
         html.Hr(),
         dbc.Row(
             [
-                dbc.Col( [cardBases], width=5),
-                dbc.Col([cardRutas ], width=4), 
-                dbc.Col( [dbc.Row(cardPolar)  ], width=3, style={'vertical_alingn': 'center'})    #cardHist
+                dbc.Col( [cardBases], width=5, style={ "height": "8px00"}),
+                dbc.Col([cardRutas ], width=4, style={ "height": "800px"}), 
+                dbc.Col( [dbc.Row(cardPolar)  ], width=3, style={ "height": "800px"})    #cardHist
                 
-            ], style={'vertical_alingn': 'center'}
+            ], 
         )
     ]
 )
@@ -181,7 +181,5 @@ layout = html.Div(
     Output('click-data', 'children'),
     Input('MapaRutas', 'clickData'))
 def display_click_data(clickData):
-    print('AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII')
-    print(clickData)
     return json.dumps(clickData, indent=2)
 

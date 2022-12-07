@@ -7,31 +7,31 @@ import dash_core_components as dcc
 from dash import html
 height = 300
 def DistrubicionEstaciones(itinerarios_bases): 
-    cols_grup=['idplug_station','Latitud_Llegada', 'Longitud_Llegada', 'dayofweek', 'hour']
+    cols_grup=['idplug_station','Latitud_Llegada', 'Longitud_Llegada','name_Llegada' ,'dayofweek', 'hour']
     df_llegada = itinerarios_bases.groupby(cols_grup)['status'].count().to_frame().reset_index()
-    df_llegada.rename(columns={'status': 'viajes_llegada', 'idplug_station': 'estacion'}, inplace=True)
+    df_llegada.rename(columns={'status': 'viajes_llegada', 'idplug_station': 'estacion', 'name_Llegada': 'name'}, inplace=True)
     # Percentage by lambda and DataFrame.apply() method.
 
     df3 = df_llegada.groupby(['dayofweek', 'hour'])['viajes_llegada'].sum().to_dict()#.reset_index()
     df_llegada['dict']=df_llegada.apply(lambda x: (x.dayofweek,x.hour),axis=1)
     df_llegada['viajes_llegada%']=df_llegada.apply(lambda x: x.viajes_llegada/df3[x.dict], axis=1)
-    df_llegada_def=df_llegada[['estacion','Latitud_Llegada', 'Longitud_Llegada','dayofweek', 'hour', 'viajes_llegada', 'viajes_llegada%' ]]
+    df_llegada_def=df_llegada[['estacion','name','Latitud_Llegada', 'Longitud_Llegada','dayofweek', 'hour', 'viajes_llegada', 'viajes_llegada%' ]]
     df_llegada_def.rename(columns={'Latitud_Llegada':'Latitud','Longitud_Llegada':'Longitud' }, inplace=True)
 
 
-    cols_grup2=['idunplug_station','Latitud_Salida', 'Longitud_Salida', 'dayofweek', 'hour']
+    cols_grup2=['idunplug_station','Latitud_Salida', 'Longitud_Salida', 'name_Salida','dayofweek', 'hour']
     df_salida = itinerarios_bases.groupby(cols_grup2)['status'].count().to_frame().reset_index()
-    df_salida.rename(columns={'status': 'viajes_salida', 'idunplug_station': 'estacion'}, inplace=True)
+    df_salida.rename(columns={'status': 'viajes_salida', 'idunplug_station': 'estacion', 'name_Salida': 'name'}, inplace=True)
     # Percentage by lambda and DataFrame.apply() method.
 
     df3 = df_salida.groupby(['dayofweek', 'hour'])['viajes_salida'].sum().to_dict()#.reset_index()
     df_salida['dict']=df_salida.apply(lambda x: (x.dayofweek,x.hour),axis=1)
     df_salida['viajes_salida%']=df_salida.apply(lambda x: x.viajes_salida/df3[x.dict], axis=1)
-    df_salida_def=df_salida[['estacion','Latitud_Salida', 'Longitud_Salida','dayofweek', 'hour', 'viajes_salida', 'viajes_salida%' ]]
+    df_salida_def=df_salida[['estacion','name','Latitud_Salida', 'Longitud_Salida','dayofweek', 'hour', 'viajes_salida', 'viajes_salida%' ]]
     
     df_salida_def.rename(columns={'Latitud_Salida':'Latitud','Longitud_Salida':'Longitud' }, inplace=True)
 
-    return pd.merge(df_llegada_def,df_salida_def, how='inner', on=['estacion','dayofweek', 'hour', 'Latitud', 'Longitud'])
+    return pd.merge(df_llegada_def,df_salida_def, how='inner', on=['estacion','name','dayofweek', 'hour', 'Latitud', 'Longitud'])
 
 def mapaPrediccion(itinerarios_bases,distribuciones, prediccion, salida_llegada,dia, hora ): 
     dicSalidaLlegada={0:'prediccion_llegada', 1:'prediccion_salida' }
@@ -46,7 +46,13 @@ def mapaPrediccion(itinerarios_bases,distribuciones, prediccion, salida_llegada,
     print(prediccion)
     print(type(prediccion))
     fig = px.scatter_mapbox(distribuciones_filt, lat="Latitud", lon="Longitud",   size=dicSalidaLlegada[salida_llegada], 
-                            zoom = 12,  )#color_discrete_sequence=px.colors.qualitative.Prism,
+                            zoom = 12, 
+                            hover_data={'Latitud':False,
+                                        'Longitud':False,
+                                        'estacion': True,
+                                        'name': True, 
+                                        dicSalidaLlegada[salida_llegada]:True
+                                        } )#color_discrete_sequence=px.colors.qualitative.Prism,
                 #color_discrete_sequence=[to_hex(c) for c in sns.color_palette('colorblind', 15)])
     # fig.update_traces(hovertemplate=None)
     # fig.update_traces(
@@ -147,9 +153,9 @@ def linepolar(df,sentido=None, n_top=None):
                 mode = 'markers',
             ))
         fig.update_layout(
-            height=200,
+            height=300,
             width=300,
-            font = dict(size=7),
+            font = dict(size=8),
             margin=dict(l=0, r=0, t=0, b=0),
             polar = dict(
                 radialaxis = dict( showticklabels=False, ),
@@ -162,10 +168,10 @@ def linepolar(df,sentido=None, n_top=None):
         theta_dict={0:'name_Salida', 1:'name_Llegada'}
         rutas=topNRutas2(df, n_top)
         
-        fig = px.line_polar(rutas, r='travel_time', theta=theta_dict[sentido],line_close=True , range_r=[0,3200])#
+        fig = px.line_polar(rutas, r='travel_time', theta=theta_dict[sentido],line_close=True , range_r=[0,4000])#
 
         fig.update_traces(fill='toself',line_color ="#18bc9c")
-        fig.update_layout(height=200,width=300, font = dict(size=7), 
+        fig.update_layout(height=300,width=300, font = dict(size=8), 
                           margin=dict(l=10, r=10, t=10, b=10))
         return fig 
     
@@ -200,7 +206,7 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
         data = [[-40, 3]]
         df = pd.DataFrame(data, columns=['lat', 'lon'])
 
-        fig=px.scatter_mapbox(df,lon='lon', lat='lat' , height = height)#,width = 500,
+        fig=px.scatter_mapbox(df,lon='lon', lat='lat' )#,width = 500,
 
         fig.update_layout(
                 margin=dict(l=0, r=0, t=0, b=0),
@@ -209,14 +215,14 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
                 hovermode='closest',
                 showlegend=True,
                 #width = 425,
-                height = height,
-                mapbox=dict(
-                    bearing=0,
-                    center=dict(
-                        lat=40.425,
-                        lon=-3.69),
-                    zoom=11.3,
-                    style= 'carto-positron' )# 'open-street-map'
+                height = 550,
+            mapbox=dict(
+                bearing=0,
+                center=dict(
+                    lat=40.435,
+                    lon=-3.69),
+                zoom=12,
+                style= 'carto-positron' )# 'open-street-map'
                 )
         
         
@@ -236,7 +242,7 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
             top_estaciones2=top_estaciones
 
             
-        fig = px.scatter_mapbox(top_estaciones2, lat="Latitud", lon="Longitud",color='Distrito', height = height )# zoom = 70, size='count',width = 400
+        fig = px.scatter_mapbox(top_estaciones2, lat="Latitud", lon="Longitud",color='Distrito' )# zoom = 70, size='count',width = 400
 
         for i in range(top_rutas.shape[0]): 
             valores=top_rutas.iloc[i,:]
@@ -264,12 +270,13 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
             showlegend=False,
             # width = 500,
             # height = 425,
+            height = 550,
             mapbox=dict(
                 bearing=0,
                 center=dict(
-                    lat=40.425,
+                    lat=40.435,
                     lon=-3.69),
-                zoom=11.3,
+                zoom=12,
                 style= 'carto-positron' )# 'open-street-map'
         )
         return fig
@@ -284,8 +291,8 @@ def filtrarHoraDiaSeman(sit, dia, hora):
 
 def GraficoSituacionMapa(situaciones, grafico): 
     dic_grafico={0:'free_bases', 1:'dock_bikes'}
-    fig = px.scatter_mapbox(situaciones, lat="latitude", lon="longitude",  color = dic_grafico[grafico], height = height, zoom = 12,#width = 400
-                            color_continuous_scale=px.colors.diverging.RdBu,
+    fig = px.scatter_mapbox(situaciones, lat="latitude", lon="longitude",  color = dic_grafico[grafico], zoom = 12,
+                            color_continuous_scale=px.colors.diverging.RdYlGn,
                             hover_data={'latitude':False,
                                         'longitude':False,
                                         'number': True,
@@ -303,14 +310,14 @@ def GraficoSituacionMapa(situaciones, grafico):
         autosize=True,
         showlegend=True,
         #width = '%100',
-        #height = '%100',
+        height = 550,
         mapbox=dict(
             bearing=0,
             center=dict(
-                lat=40.425,
+                lat=40.435,
                 lon=-3.69
             ),
-            zoom=11.3,
+            zoom=12,
             style= 'carto-positron' # 'open-street-map'
             
         ),

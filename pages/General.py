@@ -267,13 +267,22 @@ cardMap = dbc.Card(
         dbc.CardHeader("Estaciones BiciMAD por distrito", style = {"background-color":"#ecf0f1"}), 
         dbc.CardBody([
             dbc.Row([
-                dcc.Dropdown(
-                    id="select-distrito",
-                    options = itinerarios_bases.Distrito_Salida.unique(),
-                    multi=True,
-                    style={"color": "#2c3e50", "width":"80%"},
-                    placeholder="Seleccionar un distrito"
-                )
+                dbc.Col(
+                    dcc.Dropdown(
+                        id="select-distrito",
+                        options = itinerarios_bases.Distrito_Salida.unique(),
+                        multi=True,
+                        style={"color": "#2c3e50"},
+                        placeholder="Seleccionar un distrito"
+                    ), width = 5, 
+                ),
+                dbc.Col(
+                    dbc.Switch(
+                        id="color-select",
+                        label="Color por demanda",
+                        value=False,
+                    ), width = 6
+                ),
             ]),
             html.Div(id="map-display", style = {"padding": "1rem", "width" : "100%"})
         ])
@@ -283,20 +292,26 @@ cardMap = dbc.Card(
 @callback(
     Output("map-display", "children"),
     [Input("select-distrito", "value"), 
+    Input("color-select", "value"),
     Input("typeofday-checklist", "value"),
     Input("usertype-checklist", "value")]
 )
-def displayMap(value, typeofday, usertype):
+def displayMap(value, color_select, typeofday, usertype):
+    if (color_select == True):
+        color_chosen = "Count"
+    else:
+        color_chosen = "Distrito_Salida"
+
     if (value == None) | (value == []):
         return [
         dbc.Row([
-            dcc.Graph(figure = F1.mapDisplay(itinerarios_bases, itinerarios_bases.Distrito_Salida.unique(), typeofday, usertype), config={'displayModeBar': False})
+            dcc.Graph(figure = F1.mapDisplay(itinerarios_bases, color_chosen, itinerarios_bases.Distrito_Salida.unique(), typeofday, usertype), config={'displayModeBar': False})
         ])
     ]
     else:
         return [
             dbc.Row([
-                dcc.Graph(figure = F1.mapDisplay(itinerarios_bases, value, typeofday, usertype), config={'displayModeBar': False})
+                dcc.Graph(figure = F1.mapDisplay(itinerarios_bases, color_chosen, value, typeofday, usertype), config={'displayModeBar': False})
             ])
         ]
 

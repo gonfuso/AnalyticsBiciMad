@@ -82,6 +82,7 @@ def update_prediction():
     ))
 
     fig.update_layout(title_text="Predicción demanda BiciMAD", yaxis_title="Demand", plot_bgcolor='rgba(0,0,0,0)')
+    fig.update_yaxes(gridcolor="lightgrey")
 
     return fig
 
@@ -179,15 +180,20 @@ def pyramidDisplay(df, value):
     fig.update_xaxes(gridcolor="lightgrey")
     return fig
 
-def mapDisplay(itinerarios_bases, distrito, typeofday, usertype):
+def mapDisplay(itinerarios_bases, color_select, distrito, typeofday, usertype):
     df = itinerarios_bases[(itinerarios_bases["Distrito_Salida"].isin(distrito)) & (itinerarios_bases["typeofday"].isin(typeofday)) & (itinerarios_bases["user_type"].isin(usertype))]
-    df1 = df.groupby(["idunplug_station", "Distrito_Salida", "Barrio_Salida", "Número de Plazas_Salida", "Latitud_Salida", "Longitud_Salida"]).size().reset_index(name='Count')
+    df1 = df.groupby(["idunplug_station", "Distrito_Salida", "Barrio_Salida", "Número de Plazas_Salida", "Latitud_Salida", "Longitud_Salida", 'name_Salida']).size().reset_index(name='Count')
+    dF1 = df1.rename({ "Distrito_Salida":"Distrito", "Barrio_Salida": "Barrio",  "Número de Plazas_Salida": "Número plazas", "Latitud_Salida": "Latitud", "Longitud_Salida": "Longitud"})
+    df2 = df.groupby(["idunplug_station", "Distrito_Llegada", "Barrio_Llegada", "Número de Plazas_Llegada", "Latitud_Llegada", "Longitud_Llegada", 'name__Llegada']).size().reset_index(name='Count')
 
-    fig = px.scatter_mapbox(df1, lat="Latitud_Salida", lon="Longitud_Salida",  color = "Distrito_Salida", size=df1["Count"], 
-                              zoom = 12, 
-                            color_discrete_sequence=px.colors.qualitative.Prism, )
-                        #color_discrete_sequence=[to_hex(c) for c in sns.color_palette('colorblind', 15)])
-    # fig.update_traces(hovertemplate=None)
+    fig = px.scatter_mapbox(df1, lat="Latitud_Salida", lon="Longitud_Salida",  color = color_select, size="Count", 
+                              zoom = 12, range_color=[1000, 26000],
+                            color_discrete_sequence=px.colors.qualitative.Prism, color_continuous_scale= px.colors.diverging.RdYlGn, hover_data={'Latitud_Salida':False,
+                                        'Longitud_Salida':False,
+                                        'idunplug_station': True,
+                                        'name_Salida': True, 
+                                        'Count': True
+                                        }  )
 
     fig.update_layout(
         #autosize=True,
@@ -223,7 +229,7 @@ def wordcloudDisplay(df):
                         background_color = 'white',
                         width = 400,
                         height = 300,
-                        collocations=False, colormap="YlGnBu").generate_from_frequencies(barrios_frec)
+                        collocations=False, colormap="RdYlGn").generate_from_frequencies(barrios_frec)
 
     fig=px.imshow(wordcloud) # image show
     fig.update_layout(  height = 300, template="simple_white", yaxis={'visible':False}, xaxis={'visible':False}, margin=dict(l=0,r=0, b=0,t=0,pad = 5))
@@ -473,3 +479,28 @@ def getFiestas():
     holidays = pd.concat((fiestas_madrid, navidades, verano))
 
     return holidays
+
+def timelineDemanda(df):
+    fig = go.Figure(go.Scatter(
+        x = df.groupby(df["unplug_hourTime"].dt.date).size().reset_index(name='Count')['unplug_hourTime'],
+        y = df.groupby(df["unplug_hourTime"].dt.date).size().reset_index(name='Count')["Count"], 
+        marker_color = "#18bc9c"
+    ))
+    fig.update_xaxes(
+        rangeslider_visible=True,
+        tickformatstops = [
+            dict(dtickrange=[None, 1000], value="%H:%M:%S.%L ms"),
+            dict(dtickrange=[1000, 60000], value="%H:%M:%S s"),
+            dict(dtickrange=[60000, 3600000], value="%H:%M m"),
+            dict(dtickrange=[3600000, 86400000], value="%H:%M h"),
+            dict(dtickrange=[86400000, 604800000], value="%e. %b d"),
+            dict(dtickrange=[604800000, "M1"], value="%e. %b w"),
+            dict(dtickrange=["M1", "M12"], value="%b '%y M"),
+            dict(dtickrange=["M12", None], value="%Y Y")
+        ]
+    )
+
+    fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=1,r=15, b=10,t=20,pad = 5), height = 250)
+    fig.update_yaxes(gridcolor="lightgrey")
+
+    return fig

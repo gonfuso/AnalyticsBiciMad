@@ -38,9 +38,22 @@ colors_mes[mes]="#18bc9c"
 
 itinerarios_bases = pd.read_parquet('./Data/Itinerarios/itinerarios_bases3.parquet')
 itinerarios_bases["unplug_hourTime"] = pd.to_datetime(itinerarios_bases["unplug_hourTime"])
+itinerarios_bases = itinerarios_bases[itinerarios_bases["unplug_hourTime"].dt.tz_localize(None)>pd.to_datetime("20190801")]
 demanda = itinerarios_bases.groupby("unplug_hourTime").size().reset_index(name='Count')
 distribuciones=F.DistrubicionEstaciones(itinerarios_bases)
 barrios_dropdown_options = [{'label':x, 'value':x} for x in sorted(itinerarios_bases["Barrio_Salida"].unique())]
+
+cardDemand = dbc.Card([
+        dbc.CardHeader("Histórico Demanda BiciMAD", style = {"background-color":"#ecf0f1"}), 
+        dbc.CardBody(dcc.Graph(figure=F1.timelineDemanda(itinerarios_bases)) )
+    ], className="h-100"
+)
+
+cardPredictions = dbc.Card([
+        dbc.CardHeader("Predicción demanda próximos 4 días", style = {"background-color":"#ecf0f1"}), 
+        dbc.CardBody(dcc.Graph(figure=F1.update_prediction()))
+    ], className="h-100"
+)
 
 layout = dbc.Container(
     children = [
@@ -77,10 +90,14 @@ layout = dbc.Container(
             ), width=3, style = { "margin-top":"-3rem"}),
         ], style = {"padding":"1rem 1rem"}), 
 
-        html.Hr(),           
+        html.Hr(),    
 
         dbc.Row([
-            dbc.Col(dcc.Graph(figure=F1.update_prediction()) )
+            dbc.Col(cardDemand, style = {"padding-bottom": "1rem"})
+        ]),
+
+        dbc.Row([
+            dbc.Col(cardPredictions )
         ]), 
         
         dbc.Row([
@@ -122,9 +139,7 @@ layout = dbc.Container(
                             ])
                             ], style = {"padding":"1rem 1rem"})
         ])
-                    
-        
-        
+
 
     ],
     fluid = True,
