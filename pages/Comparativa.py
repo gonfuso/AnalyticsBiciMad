@@ -140,16 +140,7 @@ def display_click_data(radio, clickData, semana, hora):
 
 layout = html.Div(
     [
-        # dbc.Row(
-        #     [
-        #         dbc.Col(
-        #             [
-        #                 dcc.Dropdown(options=itinerarios_bases.Barrio_Salida.unique(),
-        #                              id='cont-choice')
-        #             ], xs=10, sm=10, md=8, lg=4, xl=4, xxl=4
-        #         )
-        #     ]
-        # ),
+       
          dbc.Row([
                 dbc.Col([
                     dbc.Col(html.Div(html.H2("Comparativa", style={"color":"#18bc9c", "vertical-align":"top"}))),
@@ -180,9 +171,9 @@ layout = html.Div(
             [
                 dbc.Col( [cardBases], width=5),
                 dbc.Col([cardRutas ], width=4), 
-                dbc.Col( [dbc.Row(cardPolar),dbc.Row(cardPolar)  ], width=3)    #cardHist
+                dbc.Col( [dbc.Row(cardPolar)  ], width=3, style={'vertical_alingn': 'center'})    #cardHist
                 
-            ]
+            ], style={'vertical_alingn': 'center'}
         )
     ]
 )
