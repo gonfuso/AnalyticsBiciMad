@@ -40,8 +40,7 @@ def mapaPrediccion(itinerarios_bases,distribuciones, prediccion, salida_llegada,
     distribuciones_filt=distribuciones_filt[distribuciones_filt['hour']==hora]
     distribuciones_filt['prediccion_llegada']= distribuciones_filt['viajes_llegada%']*prediccion
     distribuciones_filt['prediccion_salida']= distribuciones_filt['viajes_salida%']*prediccion
-    print(prediccion)
-    print(type(prediccion))
+    
     fig = px.scatter_mapbox(distribuciones_filt, lat="Latitud", lon="Longitud",   size=dicSalidaLlegada[salida_llegada], 
                             zoom = 12, 
                             hover_data={'Latitud':False,
@@ -165,7 +164,7 @@ def linepolar(df,sentido=None, n_top=None):
         theta_dict={0:'name_Salida', 1:'name_Llegada'}
         rutas=topNRutas2(df, n_top)
         
-        fig = px.line_polar(rutas, r='travel_time', theta=theta_dict[sentido],line_close=True , range_r=[0,4000])#
+        fig = px.line_polar(rutas, r='travel_time', theta=theta_dict[sentido],line_close=True , range_r=[0,66])#
 
         fig.update_traces(fill='toself',line_color ="#18bc9c")
         fig.update_layout(height=300,width=400, font = dict(size=8), 
@@ -291,7 +290,7 @@ def GraficoSituacionMapa(situaciones,itinerarios_bases, grafico):
     itinerarios_grup=itinerarios_bases.groupby('idplug_station')['status'].count().reset_index()
     itinerarios_grup['status']=itinerarios_grup['status']
     sit_it = pd.merge(itinerarios_grup, situaciones, how='inner', left_on='idplug_station', right_on='number')
-    print(sit_it.status.describe())     
+        
     dic_grafico={0:'free_bases', 1:'dock_bikes'}
     fig = px.scatter_mapbox(sit_it, lat="latitude", lon="longitude",  color = dic_grafico[grafico], zoom = 12, size='status', size_max=15,
                             color_continuous_scale=px.colors.diverging.RdYlGn, range_color=[0 , 12],

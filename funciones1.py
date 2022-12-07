@@ -93,7 +93,7 @@ def gaugeDisplay(df, date, value):
     lost_this_week = round(df_filtrado[df_filtrado["unplug_hourTime"].dt.tz_localize(None)>pd.to_datetime(date_init_week)].groupby(df_filtrado["unplug_hourTime"].dt.isocalendar().week).size().reset_index(name='Count')["Count"].mean())
     avg_lost_per_week = round(df_filtrado[df_filtrado["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date_init_week)].groupby(df_filtrado["unplug_hourTime"].dt.isocalendar().week).size().reset_index(name='Count')["Count"].mean())
     avg_lost_to_dayofweek = round(df_filtrado[(df_filtrado["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date_init_week))&(df_filtrado["unplug_hourTime"].dt.dayofweek < date.dayofweek)].groupby(df_filtrado["unplug_hourTime"].dt.isocalendar().week).size().reset_index(name='Count')["Count"].mean())
-    print(value)
+    
     dict_color={'long_rental': 'red', 'short_rental': 'red', 'change_bike': 'red'}
 
     fig = go.Figure(go.Indicator(
@@ -186,15 +186,12 @@ def mapDisplay(itinerarios_bases, df_selected, color_select, distrito, typeofday
         df = itinerarios_bases[(itinerarios_bases["Distrito_Llegada"].isin(distrito)) & (itinerarios_bases["typeofday"].isin(typeofday)) & (itinerarios_bases["user_type"].isin(usertype))]
         df1 = df.groupby(["idplug_station", "Distrito_Llegada", "Barrio_Llegada", "Número de Plazas_Llegada", "Latitud_Llegada", "Longitud_Llegada", 'name_Llegada']).size().reset_index(name='Count')
         df1.rename(columns={ "idplug_station": "estacion","Distrito_Llegada":"Distrito", "Barrio_Llegada": "Barrio",  "Número de Plazas_Llegada": "Número plazas", "Latitud_Llegada": "Latitud", "Longitud_Llegada": "Longitud", 'name_Llegada': "nombre"}, inplace=True)
-        print("pene")
-        print(df1.head)
+        
     else:
         df = itinerarios_bases[(itinerarios_bases["Distrito_Salida"].isin(distrito)) & (itinerarios_bases["typeofday"].isin(typeofday)) & (itinerarios_bases["user_type"].isin(usertype))]
         df1 = df.groupby(["idunplug_station", "Distrito_Salida", "Barrio_Salida", "Número de Plazas_Salida", "Latitud_Salida", "Longitud_Salida", 'name_Salida']).size().reset_index(name='Count')
         df1.rename(columns={ "idunplug_station": "estacion","Distrito_Salida":"Distrito", "Barrio_Salida": "Barrio",  "Número de Plazas_Salida": "Número plazas", "Latitud_Salida": "Latitud", "Longitud_Salida": "Longitud", 'name_Salida': "nombre"}, inplace=True)
-        print(df1.Count.sum())
-        print(df1.head())
-    
+            
     fig = px.scatter_mapbox(df1, lat="Latitud", lon="Longitud",  color = color_select, size="Count", 
                               zoom = 12, range_color=[1000, 26000],
                             color_discrete_sequence=px.colors.qualitative.Prism, color_continuous_scale= px.colors.diverging.RdYlGn,
@@ -254,7 +251,7 @@ def wordcloudDisplay2(df, x, typeofday, usertype):
     barrios_llegada_wordcloud=["".join(i for i in palabra if not i.isdigit()) for palabra in barrios_llegada]
     barrios_frec=Counter(barrios_llegada_wordcloud)
 
-    print(barrios_frec)
+    
 
     wordcloud = WordCloud (
                         background_color = 'white',
@@ -492,6 +489,7 @@ def getFiestas():
     return holidays
 
 def timelineDemanda(df):
+    df = df[df["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime("20191212")]
     fig = go.Figure(go.Scatter(
         x = df.groupby(df["unplug_hourTime"].dt.date).size().reset_index(name='Count')['unplug_hourTime'],
         y = df.groupby(df["unplug_hourTime"].dt.date).size().reset_index(name='Count')["Count"], 
