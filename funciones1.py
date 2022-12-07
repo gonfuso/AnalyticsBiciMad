@@ -254,12 +254,12 @@ def wordcloudDisplay2(df, x, typeofday, usertype):
     barrios_llegada_wordcloud=["".join(i for i in palabra if not i.isdigit()) for palabra in barrios_llegada]
     barrios_frec=Counter(barrios_llegada_wordcloud)
 
-    set(barrios_llegada_wordcloud)
+    print(barrios_frec)
 
     wordcloud = WordCloud (
                         background_color = 'white',
                         height = 150,
-                        collocations=False, colormap="YlGnBu").generate_from_frequencies(barrios_frec)    
+                        collocations=False, colormap="RdYlGn").generate_from_frequencies(barrios_frec)    
 
     return wordcloud.to_image()
 
