@@ -36,9 +36,6 @@ def DistrubicionEstaciones(itinerarios_bases):
 def mapaPrediccion(itinerarios_bases,distribuciones, prediccion, salida_llegada,dia, hora ): 
     dicSalidaLlegada={0:'prediccion_llegada', 1:'prediccion_salida' }
     
-    
-
-    
     distribuciones_filt=distribuciones[(distribuciones['dayofweek']==dia)]
     distribuciones_filt=distribuciones_filt[distribuciones_filt['hour']==hora]
     distribuciones_filt['prediccion_llegada']= distribuciones_filt['viajes_llegada%']*prediccion
@@ -154,9 +151,9 @@ def linepolar(df,sentido=None, n_top=None):
             ))
         fig.update_layout(
             height=300,
-            width=300,
+            width=400,
             font = dict(size=8),
-            margin=dict(l=0, r=0, t=0, b=0),
+            margin=dict(l=20, r=20, t=0, b=0),
             polar = dict(
                 radialaxis = dict( showticklabels=False, ),
                 angularaxis = dict(showticklabels=False,)
@@ -171,8 +168,8 @@ def linepolar(df,sentido=None, n_top=None):
         fig = px.line_polar(rutas, r='travel_time', theta=theta_dict[sentido],line_close=True , range_r=[0,4000])#
 
         fig.update_traces(fill='toself',line_color ="#18bc9c")
-        fig.update_layout(height=300,width=300, font = dict(size=8), 
-                          margin=dict(l=10, r=10, t=10, b=10))
+        fig.update_layout(height=300,width=400, font = dict(size=8), 
+                          margin=dict(l=1, r=1, t=10, b=10))
         return fig 
     
 def topEstaciones(df): 
@@ -215,17 +212,17 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
                 hovermode='closest',
                 showlegend=True,
                 #width = 425,
-                height = 550,
-            mapbox=dict(
-                bearing=0,
-                center=dict(
-                    lat=40.435,
-                    lon=-3.69),
-                zoom=12,
+                height = 500,
+             mapbox=dict(
+            bearing=0,
+            center=dict(
+                lat=40.435,
+                lon=-3.69
+            ),
+            zoom=11.8,
                 style= 'carto-positron' )# 'open-street-map'
                 )
-        
-        
+    
         return fig
     else: 
         
@@ -270,13 +267,14 @@ def GráficoMapasRutas(df_itinerarios, n_top, tipo=None, estacion=None):
             showlegend=False,
             # width = 500,
             # height = 425,
-            height = 550,
+            height = 500,
             mapbox=dict(
-                bearing=0,
-                center=dict(
-                    lat=40.435,
-                    lon=-3.69),
-                zoom=12,
+            bearing=0,
+            center=dict(
+                lat=40.435,
+                lon=-3.69
+            ),
+            zoom=11.8,
                 style= 'carto-positron' )# 'open-street-map'
         )
         return fig
@@ -292,7 +290,7 @@ def filtrarHoraDiaSeman(sit, dia, hora):
 def GraficoSituacionMapa(situaciones, grafico): 
     dic_grafico={0:'free_bases', 1:'dock_bikes'}
     fig = px.scatter_mapbox(situaciones, lat="latitude", lon="longitude",  color = dic_grafico[grafico], zoom = 12,
-                            color_continuous_scale=px.colors.diverging.RdYlGn,
+                            color_continuous_scale=px.colors.diverging.RdYlGn, range_color=[0 , 12],
                             hover_data={'latitude':False,
                                         'longitude':False,
                                         'number': True,
@@ -310,14 +308,14 @@ def GraficoSituacionMapa(situaciones, grafico):
         autosize=True,
         showlegend=True,
         #width = '%100',
-        height = 550,
+        height = 500,
         mapbox=dict(
             bearing=0,
             center=dict(
                 lat=40.435,
                 lon=-3.69
             ),
-            zoom=12,
+            zoom=11.5,
             style= 'carto-positron' # 'open-street-map'
             
         ),

@@ -180,19 +180,30 @@ def pyramidDisplay(df, value):
     fig.update_xaxes(gridcolor="lightgrey")
     return fig
 
-def mapDisplay(itinerarios_bases, color_select, distrito, typeofday, usertype):
-    df = itinerarios_bases[(itinerarios_bases["Distrito_Salida"].isin(distrito)) & (itinerarios_bases["typeofday"].isin(typeofday)) & (itinerarios_bases["user_type"].isin(usertype))]
-    df1 = df.groupby(["idunplug_station", "Distrito_Salida", "Barrio_Salida", "Número de Plazas_Salida", "Latitud_Salida", "Longitud_Salida", 'name_Salida']).size().reset_index(name='Count')
-    dF1 = df1.rename({ "Distrito_Salida":"Distrito", "Barrio_Salida": "Barrio",  "Número de Plazas_Salida": "Número plazas", "Latitud_Salida": "Latitud", "Longitud_Salida": "Longitud"})
-    df2 = df.groupby(["idunplug_station", "Distrito_Llegada", "Barrio_Llegada", "Número de Plazas_Llegada", "Latitud_Llegada", "Longitud_Llegada", 'name__Llegada']).size().reset_index(name='Count')
-
-    fig = px.scatter_mapbox(df1, lat="Latitud_Salida", lon="Longitud_Salida",  color = color_select, size="Count", 
+def mapDisplay(itinerarios_bases, df_selected, color_select, distrito, typeofday, usertype):
+    
+    if (df_selected == True):
+        df = itinerarios_bases[(itinerarios_bases["Distrito_Llegada"].isin(distrito)) & (itinerarios_bases["typeofday"].isin(typeofday)) & (itinerarios_bases["user_type"].isin(usertype))]
+        df1 = df.groupby(["idplug_station", "Distrito_Llegada", "Barrio_Llegada", "Número de Plazas_Llegada", "Latitud_Llegada", "Longitud_Llegada", 'name_Llegada']).size().reset_index(name='Count')
+        df1.rename(columns={ "idplug_station": "estacion","Distrito_Llegada":"Distrito", "Barrio_Llegada": "Barrio",  "Número de Plazas_Llegada": "Número plazas", "Latitud_Llegada": "Latitud", "Longitud_Llegada": "Longitud", 'name_Llegada': "nombre"}, inplace=True)
+        print("pene")
+        print(df1.head)
+    else:
+        df = itinerarios_bases[(itinerarios_bases["Distrito_Salida"].isin(distrito)) & (itinerarios_bases["typeofday"].isin(typeofday)) & (itinerarios_bases["user_type"].isin(usertype))]
+        df1 = df.groupby(["idunplug_station", "Distrito_Salida", "Barrio_Salida", "Número de Plazas_Salida", "Latitud_Salida", "Longitud_Salida", 'name_Salida']).size().reset_index(name='Count')
+        df1.rename(columns={ "idunplug_station": "estacion","Distrito_Salida":"Distrito", "Barrio_Salida": "Barrio",  "Número de Plazas_Salida": "Número plazas", "Latitud_Salida": "Latitud", "Longitud_Salida": "Longitud", 'name_Salida': "nombre"}, inplace=True)
+        print(df1.Count.sum())
+        print(df1.head())
+    
+    fig = px.scatter_mapbox(df1, lat="Latitud", lon="Longitud",  color = color_select, size="Count", 
                               zoom = 12, range_color=[1000, 26000],
-                            color_discrete_sequence=px.colors.qualitative.Prism, color_continuous_scale= px.colors.diverging.RdYlGn, hover_data={'Latitud_Salida':False,
-                                        'Longitud_Salida':False,
-                                        'idunplug_station': True,
-                                        'name_Salida': True, 
-                                        'Count': True
+                            color_discrete_sequence=px.colors.qualitative.Prism, color_continuous_scale= px.colors.diverging.RdYlGn,
+                             hover_data={'Latitud':False,
+                                        'Longitud':False,
+                                        'estacion': True,
+                                        'nombre': True, 
+                                        'Count': True,
+                                        'Número plazas':True
                                         }  )
 
     fig.update_layout(

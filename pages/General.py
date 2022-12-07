@@ -308,7 +308,7 @@ def displayMap(value, color_select, typeofday, usertype,salida):
     if (color_select == True):
         color_chosen = "Count"
     else:
-        color_chosen = "Distrito_Salida"
+        color_chosen = "Distrito"
 
     if (value == None) | (value == []):
         return [

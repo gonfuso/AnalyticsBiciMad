@@ -31,7 +31,7 @@ cardBases = dbc.Card(
             value=1,id="radioMapa",inline=True),
         
             ]),
-            html.Div(id="bases-display", style = {"padding": "1rem", "width" : "100%"}, 
+            html.Div(id="bases-display", style = {"width" : "100%"}, 
                     children=[] ), 
             dcc.Store(id='memoryBase'),
         ])
@@ -70,7 +70,7 @@ cardRutas = dbc.Card(
                     value=1,id="radioRuta",inline=True),
         
             ]),
-            html.Div(id="rutas-display", style = {"padding": "1rem", "width" : "100%"})
+            html.Div(id="rutas-display", style = { "width" : "100%"})
             ])
     ],
     className="h-100",
@@ -169,10 +169,9 @@ layout = html.Div(
         html.Hr(),
         dbc.Row(
             [
-                dbc.Col( [cardBases], width=5, style={ "height": "8px00"}),
-                dbc.Col([cardRutas ], width=4, style={ "height": "800px"}), 
-                dbc.Col( [dbc.Row(cardPolar)  ], width=3, style={ "height": "800px"})    #cardHist
-                
+                dbc.Col( [cardBases], width=4, style={ "height": "650px"}),
+                dbc.Col([cardRutas ], width=4, style={ "height": "650px"}), 
+                dbc.Col( [dbc.Row(cardPolar)], width=4, style={ "height": "650px"})    #cardHist
             ], 
         )
     ]
