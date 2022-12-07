@@ -92,17 +92,19 @@ def gaugeDisplay(df, date, value):
     lost_this_week = round(df_filtrado[df_filtrado["unplug_hourTime"].dt.tz_localize(None)>pd.to_datetime(date_init_week)].groupby(df_filtrado["unplug_hourTime"].dt.isocalendar().week).size().reset_index(name='Count')["Count"].mean())
     avg_lost_per_week = round(df_filtrado[df_filtrado["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date_init_week)].groupby(df_filtrado["unplug_hourTime"].dt.isocalendar().week).size().reset_index(name='Count')["Count"].mean())
     avg_lost_to_dayofweek = round(df_filtrado[(df_filtrado["unplug_hourTime"].dt.tz_localize(None)<pd.to_datetime(date_init_week))&(df_filtrado["unplug_hourTime"].dt.dayofweek < date.dayofweek)].groupby(df_filtrado["unplug_hourTime"].dt.isocalendar().week).size().reset_index(name='Count')["Count"].mean())
+    print(value)
+    dict_color={'long_rental': 'red', 'short_rental': 'red', 'change_bike': 'red'}
 
     fig = go.Figure(go.Indicator(
         domain = {'x': [0, 1], 'y': [0, 1]},
         value = lost_this_week,
         mode = "gauge+number+delta",
-        delta = {'reference': avg_lost_to_dayofweek},
+        delta = {'reference': avg_lost_to_dayofweek, 'increasing': {'color': dict_color[value]}},
         gauge = {'axis': {'range': [None, avg_lost_per_week*1.5]},
                 'bar': {'color': "#18bc9c"},
                 'steps' : [
                     {'range': [0, avg_lost_per_week], 'color': "lightgray"}],
-                'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': avg_lost_to_dayofweek}}))
+                'threshold' : {'line': {'color': dict_color[value], 'width': 4}, 'thickness': 0.75, 'value': avg_lost_to_dayofweek}}))
     
     fig.update_layout(margin=dict(l=2,r=2, b=5,t=40,pad = 5), height = 160)
 
