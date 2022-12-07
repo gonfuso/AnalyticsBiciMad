@@ -281,7 +281,14 @@ cardMap = dbc.Card(
                         id="color-select",
                         label="Color por demanda",
                         value=False,
-                    ), width = 6
+                    ), width = 3
+                ),
+                dbc.Col(
+                    dbc.Switch(
+                        id="SalidaLlegada",
+                        label="Salida/Llegada",
+                        value=False,
+                    ), width = 3
                 ),
             ]),
             html.Div(id="map-display", style = {"padding": "1rem", "width" : "100%"})
@@ -294,9 +301,10 @@ cardMap = dbc.Card(
     [Input("select-distrito", "value"), 
     Input("color-select", "value"),
     Input("typeofday-checklist", "value"),
-    Input("usertype-checklist", "value")]
+    Input("usertype-checklist", "value"),
+    Input("SalidaLlegada", "value")]
 )
-def displayMap(value, color_select, typeofday, usertype):
+def displayMap(value, color_select, typeofday, usertype,salida):
     if (color_select == True):
         color_chosen = "Count"
     else:
@@ -305,13 +313,13 @@ def displayMap(value, color_select, typeofday, usertype):
     if (value == None) | (value == []):
         return [
         dbc.Row([
-            dcc.Graph(figure = F1.mapDisplay(itinerarios_bases, color_chosen, itinerarios_bases.Distrito_Salida.unique(), typeofday, usertype), config={'displayModeBar': False})
+            dcc.Graph(figure = F1.mapDisplay(itinerarios_bases, salida,color_chosen, itinerarios_bases.Distrito_Salida.unique(), typeofday, usertype), config={'displayModeBar': False})
         ])
     ]
     else:
         return [
             dbc.Row([
-                dcc.Graph(figure = F1.mapDisplay(itinerarios_bases, color_chosen, value, typeofday, usertype), config={'displayModeBar': False})
+                dcc.Graph(figure = F1.mapDisplay(itinerarios_bases,salida, color_chosen, value, typeofday, usertype), config={'displayModeBar': False})
             ])
         ]
 
