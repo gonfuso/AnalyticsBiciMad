@@ -147,7 +147,7 @@ def linepolar(df,sentido=None, n_top=None):
                 mode = 'markers',
             ))
         fig.update_layout(
-            height=130,
+            height=200,
             width=300,
             font = dict(size=7),
             margin=dict(l=0, r=0, t=0, b=0),
@@ -165,8 +165,8 @@ def linepolar(df,sentido=None, n_top=None):
         fig = px.line_polar(rutas, r='travel_time', theta=theta_dict[sentido],line_close=True )#
 
         fig.update_traces(fill='toself',line_color ="#18bc9c")
-        fig.update_layout(height=130,width=300, font = dict(size=7), 
-                          margin=dict(l=0, r=0, t=0, b=0))
+        fig.update_layout(height=200,width=300, font = dict(size=7), 
+                          margin=dict(l=10, r=10, t=10, b=10))
         return fig 
     
 def topEstaciones(df): 
