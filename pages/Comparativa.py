@@ -53,8 +53,9 @@ def on_data_set_table(data):
 )
 def mapaBases( semana,hora, radio): 
     
+    itinerarios=itinerarios_bases[ (itinerarios_bases['dayofweek']==semana) & (itinerarios_bases['hour']==hora) ]
     return [dbc.Row([
-                dcc.Graph(id='MapaBases',figure = F.GraficoSituacionMapa(F.filtrarHoraDiaSeman(situacion2,semana,hora), radio ), 
+                dcc.Graph(id='MapaBases',figure = F.GraficoSituacionMapa(F.filtrarHoraDiaSeman(situacion2,semana,hora),itinerarios, radio ), 
                           config={'displayModeBar': False})
             ])
         ] 

@@ -152,7 +152,7 @@ def linepolar(df,sentido=None, n_top=None):
         fig.update_layout(
             height=300,
             width=400,
-            font = dict(size=8),
+            font = dict(size=12),
             margin=dict(l=20, r=20, t=0, b=0),
             polar = dict(
                 radialaxis = dict( showticklabels=False, ),
@@ -287,9 +287,13 @@ def filtrarHoraDiaSeman(sit, dia, hora):
     
     return sit_filt2.reset_index()
 
-def GraficoSituacionMapa(situaciones, grafico): 
+def GraficoSituacionMapa(situaciones,itinerarios_bases, grafico): 
+    itinerarios_grup=itinerarios_bases.groupby('idplug_station')['status'].count().reset_index()
+    itinerarios_grup['status']=itinerarios_grup['status']
+    sit_it = pd.merge(itinerarios_grup, situaciones, how='inner', left_on='idplug_station', right_on='number')
+    print(sit_it.status.describe())     
     dic_grafico={0:'free_bases', 1:'dock_bikes'}
-    fig = px.scatter_mapbox(situaciones, lat="latitude", lon="longitude",  color = dic_grafico[grafico], zoom = 12,
+    fig = px.scatter_mapbox(sit_it, lat="latitude", lon="longitude",  color = dic_grafico[grafico], zoom = 12, size='status', size_max=15,
                             color_continuous_scale=px.colors.diverging.RdYlGn, range_color=[0 , 12],
                             hover_data={'latitude':False,
                                         'longitude':False,
